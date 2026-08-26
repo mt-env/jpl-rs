@@ -19,6 +19,13 @@ pub fn run() {
             std::process::exit(1);
         }
     };
+
+    if let Some(mode) = mode
+        && mode == Mode::Lex
+    {
+        print::lex::print_tokens(tokens);
+        return;
+    }
 }
 
 fn parse_args<'a>() -> Result<Config, CliError> {
