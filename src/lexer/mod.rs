@@ -88,11 +88,12 @@ fn next_token<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError
     // nuke all whitespace and comments at the start of the token
     let mut next = start;
     loop {
+        let previous = next;
         next = skip_whitespace(program, next);
         next = skip_line_comment(program, next);
         next = skip_block_comment(program, next);
 
-        if next == start {
+        if next == previous {
             break;
         }
     }
