@@ -29,9 +29,10 @@ pub fn run() {
 }
 
 fn parse_args<'a>() -> Result<Config, CliError> {
-    let args = std::env::args();
+    let mut args = std::env::args();
     let mut filename = None;
     let mut mode = None;
+    args.next(); // skip the program name
     for argument in args {
         if argument.starts_with("-") {
             if mode.is_some() {
