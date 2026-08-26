@@ -1,8 +1,19 @@
+use crate::{error, lexer};
+
 pub fn run() {
     let Config { program, mode } = match parse_args() {
         Ok(config) => config,
         Err(e) => {
             eprintln!("Error: {:?}", e);
+            std::process::exit(1);
+        }
+    };
+
+    let tokens = match lexer::lex(&program) {
+        Ok(tokens) => tokens,
+        Err(lex_errors) => {
+            eprintln!("Compilation failed: lexical analysis failed");
+            error::lex::print_lex_error(lex_errors, &program);
             std::process::exit(1);
         }
     };
@@ -43,6 +54,7 @@ pub struct Config {
     mode: Option<Mode>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Mode {
     Lex,
     Parse,
