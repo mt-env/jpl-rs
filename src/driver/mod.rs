@@ -1,5 +1,7 @@
 use crate::{error, lexer};
 
+mod print;
+
 pub fn run() {
     let Config { program, mode } = match parse_args() {
         Ok(config) => config,
