@@ -60,5 +60,14 @@ pub enum TokenKind {
     NewLine,
 }
 
+impl<'a> Token<'a> {
+    pub fn new(kind: TokenKind, offset: usize, str: &'a str) -> Self {
+        Token { kind, offset, str }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LexError {}
+pub enum LexError {
+    UnterminatedString(usize),
+    IllegalCharacter(usize, char),
+}
