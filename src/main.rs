@@ -1,3 +1,5 @@
+use jpl_rs::driver;
+
 fn main() {
-    println!("Hello, world!");
+    driver::run()
 }
