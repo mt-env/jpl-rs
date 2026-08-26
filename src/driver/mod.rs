@@ -14,8 +14,8 @@ pub fn run() {
     let tokens = match lexer::lex(&program) {
         Ok(tokens) => tokens,
         Err(lex_errors) => {
-            eprintln!("Compilation failed: lexical analysis failed");
             error::lex::print_lex_error(lex_errors, &program);
+            println!("Compilation failed: lexical analysis failed");
             std::process::exit(1);
         }
     };
