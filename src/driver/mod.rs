@@ -24,6 +24,7 @@ pub fn run() {
         && mode == Mode::Lex
     {
         print::lex::print_tokens(tokens);
+        println!("Compilation succeeded: lexical analysis complete");
         return;
     }
 }
