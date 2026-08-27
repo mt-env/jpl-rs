@@ -106,7 +106,7 @@ fn next_token<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError
     };
 
     // if first letter is alphabetic, read until neither alphanumeric nor underscore
-    if matches!(first_char, b'a'..b'z' | b'A'..b'Z') {
+    if matches!(first_char, b'a'..=b'z' | b'A'..=b'Z') {
         return read_alpha(program, next);
     }
 
@@ -140,7 +140,7 @@ fn next_token<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError
     }
 
     // read numeric
-    if matches!(first_char, b'0'..b'9') {
+    if matches!(first_char, b'0'..=b'9') {
         return read_numeric(program, next);
     }
 
@@ -185,7 +185,7 @@ fn skip_block_comment(program: &str, start: usize) -> usize {
 fn read_alpha<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError>, usize) {
     let mut pos = start;
     while pos < program.len()
-        && matches!(program.as_bytes()[pos], b'a'..b'z' | b'A'..b'Z' | b'0'..b'9' | b'_')
+        && matches!(program.as_bytes()[pos], b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_')
     {
         pos += 1;
     }
