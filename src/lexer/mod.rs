@@ -139,6 +139,17 @@ fn next_token<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError
         return read_alpha(program, next);
     }
 
+    // read numeric
+    if matches!(first_char, b'0'..=b'9')
+        || (first_char == &b'.'
+            && program
+                .as_bytes()
+                .get(next + 1)
+                .map_or(false, |c| matches!(c, b'0'..=b'9')))
+    {
+        return read_numeric(program, next);
+    }
+
     // check punctuation + operators
     let hardcoded_tokens = PUNCTUATION.iter().chain(OPERATORS.iter());
     for (keyword, kind) in hardcoded_tokens {
@@ -166,11 +177,6 @@ fn next_token<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError
             next += 1;
         }
         return (Ok(token), next);
-    }
-
-    // read numeric
-    if matches!(first_char, b'0'..=b'9') {
-        return read_numeric(program, next);
     }
 
     return (
