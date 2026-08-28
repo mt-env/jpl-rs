@@ -93,6 +93,7 @@ fn next_token<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError
         next = skip_whitespace(program, next);
         next = skip_line_comment(program, next);
         next = skip_block_comment(program, next);
+        next = skip_escaped_newline(program, next);
 
         if next == previous {
             break;
@@ -181,6 +182,13 @@ fn skip_block_comment(program: &str, start: usize) -> usize {
         }
     }
     pos
+}
+
+fn skip_escaped_newline(program: &str, start: usize) -> usize {
+    if program[start..].starts_with("\\\n") {
+        return start + 2;
+    }
+    start
 }
 
 fn read_alpha<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError>, usize) {
