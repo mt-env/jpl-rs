@@ -3,10 +3,21 @@ use crate::{error, lexer};
 mod print;
 
 pub fn run() {
-    let Config { program, mode } = match parse_args() {
+    let Config { filename, mode } = match parse_args() {
         Ok(config) => config,
         Err(e) => {
-            eprintln!("Error: {:?}", e);
+            println!("Error: {:?}", e);
+            std::process::exit(1);
+        }
+    };
+
+    let program = match std::fs::read(&filename) {
+        Ok(program) => program,
+        Err(e) => {
+            println!(
+                "Compilation failed: could not read file '{}': {}",
+                filename, e
+            );
             std::process::exit(1);
         }
     };
@@ -52,16 +63,16 @@ fn parse_args<'a>() -> Result<Config, CliError> {
         }
     }
 
-    let program = match filename {
-        Some(f) => std::fs::read_to_string(&f).map_err(|_| CliError::UnknownFile(f))?,
+    let filename = match filename {
+        Some(filename) => filename,
         None => return Err(CliError::MissingFilename),
     };
 
-    Ok(Config { program, mode })
+    Ok(Config { filename, mode })
 }
 
 pub struct Config {
-    program: String,
+    filename: String,
     mode: Option<Mode>,
 }
 
@@ -76,7 +87,6 @@ enum Mode {
 
 enum CliError {
     MissingFilename,
-    UnknownFile(String),
     UnknownOption(String),
     MultipleModesSpecified,
 }
@@ -85,7 +95,6 @@ impl std::fmt::Debug for CliError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             CliError::MissingFilename => write!(f, "Missing filename"),
-            CliError::UnknownFile(filename) => write!(f, "File not found: {}", filename),
             CliError::UnknownOption(option) => write!(f, "Unknown option: {}", option),
             CliError::MultipleModesSpecified => write!(f, "Multiple modes specified"),
         }
