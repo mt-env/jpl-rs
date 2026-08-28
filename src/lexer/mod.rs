@@ -59,7 +59,7 @@ const OPERATORS: [(&'static str, TokenKind); 16] = [
 ];
 
 pub fn lex<'a>(program: &'a str) -> Result<Vec<Token<'a>>, Vec<LexError>> {
-    let mut tokens = Vec::new();
+    let mut tokens: Vec<Token> = Vec::new();
     let mut errors = Vec::new();
     let mut curr_pos = 0;
 
@@ -67,7 +67,16 @@ pub fn lex<'a>(program: &'a str) -> Result<Vec<Token<'a>>, Vec<LexError>> {
         let (result, next_pos) = next_token(program, curr_pos);
         curr_pos = next_pos;
         match result {
-            Ok(token) => tokens.push(token),
+            Ok(token) => {
+                // skip consecutive newlines
+                if token.kind == TokenKind::NewLine
+                    && let Some(last_token) = tokens.last()
+                    && last_token.kind == TokenKind::NewLine
+                {
+                    continue;
+                }
+                tokens.push(token);
+            }
             Err(error) => errors.push(error),
         }
 
