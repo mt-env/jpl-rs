@@ -2,6 +2,9 @@ name: Auto-grades your solution
 
 on: push
 
+env:
+  COURSE_ORG: utah-cs4470-fa26
+
 jobs:
   prepare-runtime:
     name: "Prepare runtime"
@@ -13,7 +16,7 @@ jobs:
           packages: nasm
       - name: "Get rt repo commit hash for rt compile cache key"
         run: |
-          git ls-remote https://github.com/utah-cs4470-sp25/runtime.git refs/heads/main | cut -f 1 > rt_commit.txt
+          git ls-remote https://github.com/${{ env.COURSE_ORG }}/runtime.git refs/heads/main | cut -f 1 > rt_commit.txt
           echo "RT_COMMIT_HASH=$(cat rt_commit.txt)" >> $GITHUB_ENV
       - name: "Check cache for compiled rt"
         uses: actions/cache@v4
@@ -24,7 +27,7 @@ jobs:
       - name: "Download and compile runtime on cache miss"
         if: steps.cache-rt.outputs.cache-hit != 'true'
         run: |
-          git clone --branch linux https://github.com/utah-cs4470-sp25/runtime.git rt
+          git clone --branch linux https://github.com/${{ env.COURSE_ORG }}/runtime.git rt
           mkdir -p rt-cache
           (cd rt && make && cp -r . ../rt-cache)
   compiles:
@@ -60,7 +63,7 @@ jobs:
           version: 1.0
       - name: "Get rt repo commit hash"
         run: |
-          git ls-remote https://github.com/utah-cs4470-sp25/runtime.git refs/heads/main | cut -f 1 > rt_commit.txt
+          git ls-remote https://github.com/${{ env.COURSE_ORG }}/runtime.git refs/heads/main | cut -f 1 > rt_commit.txt
           echo "RT_COMMIT_HASH=$(cat rt_commit.txt)" >> $GITHUB_ENV
       - name: "Restore runtime cache"
         uses: actions/cache@v4
@@ -68,12 +71,11 @@ jobs:
           path: rt
           key: rt-${{ env.RT_COMMIT_HASH }}
       - name: "Allow execution of compiled files"
-        run: |
-          chmod +x *
+        run: chmod +x *
       - name: "Downloads grader scripts"
         uses: actions/checkout@master
         with:
-          repository: utah-cs4470-sp25/grader
+          repository: ${{ env.COURSE_ORG }}/grader
           path: grader
       - name: "Counts total parts"
         run: echo HW_PARTS=$(make -s -C grader count-current) >> $GITHUB_ENV; echo $HW_PARTS
