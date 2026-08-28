@@ -1,10 +1,27 @@
 use std::fmt::Display;
 
-use crate::lexer::token::LexError;
+use crate::lexer::token::{IllegalByteError, LexError};
+
+pub fn print_validation_error(errors: Vec<IllegalByteError>) {
+    for error in errors {
+        println!("{}", error);
+    }
+    println!("Compilation failed: lexical analysis failed");
+}
 
 pub fn print_lex_error(errors: Vec<LexError>, program: &str) {
     for error in errors {
         println!("Lexical error: {}", error);
+    }
+}
+
+impl Display for IllegalByteError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Illegal byte '{}' (0x{:02X}) at offset {}",
+            self.byte as char, self.byte, self.offset
+        )
     }
 }
 

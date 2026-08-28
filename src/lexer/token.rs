@@ -71,3 +71,9 @@ pub enum LexError {
     UnterminatedString(usize),
     IllegalCharacter(usize, char),
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct IllegalByteError {
+    pub offset: usize,
+    pub byte: u8,
+}

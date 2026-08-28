@@ -22,6 +22,15 @@ pub fn run() {
         }
     };
 
+    let program = match lexer::validate_source(program) {
+        Ok(program) => program,
+        Err(lex_errors) => {
+            error::lex::print_validation_error(lex_errors);
+            println!("Compilation failed: lexical analysis failed");
+            std::process::exit(1);
+        }
+    };
+
     let tokens = match lexer::lex(&program) {
         Ok(tokens) => tokens,
         Err(lex_errors) => {

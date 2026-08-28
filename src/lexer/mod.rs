@@ -1,4 +1,4 @@
-use crate::lexer::token::{LexError, Token, TokenKind};
+use crate::lexer::token::{IllegalByteError, LexError, Token, TokenKind};
 
 pub mod token;
 
@@ -57,6 +57,24 @@ const OPERATORS: [(&'static str, TokenKind); 16] = [
     ("%", TokenKind::Op),
     ("=", TokenKind::Equals),
 ];
+
+pub fn validate_source(program: Vec<u8>) -> Result<String, Vec<IllegalByteError>> {
+    let mut errors = Vec::new();
+    for (offset, byte) in program.iter().enumerate() {
+        if (*byte >= 32 && *byte <= 126) || *byte == 10 {
+            continue;
+        }
+        errors.push(IllegalByteError {
+            offset,
+            byte: *byte,
+        });
+    }
+    if !errors.is_empty() {
+        Err(errors)
+    } else {
+        unsafe { Ok(String::from_utf8(program).unwrap_unchecked()) } // safe because we just checked all bytes
+    }
+}
 
 pub fn lex<'a>(program: &'a str) -> Result<Vec<Token<'a>>, Vec<LexError>> {
     let mut tokens: Vec<Token> = Vec::new();
