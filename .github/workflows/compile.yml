@@ -3,34 +3,83 @@ name: Auto-grades your solution
 on: push
 
 jobs:
+  prepare-runtime:
+    name: "Prepare runtime"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Install nasm for caching"
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: nasm
+      - name: "Get rt repo commit hash for rt compile cache key"
+        run: |
+          git ls-remote https://github.com/utah-cs4470-sp25/runtime.git refs/heads/main | cut -f 1 > rt_commit.txt
+          echo "RT_COMMIT_HASH=$(cat rt_commit.txt)" >> $GITHUB_ENV
+      - name: "Check cache for compiled rt"
+        uses: actions/cache@v4
+        id: cache-rt
+        with:
+          path: rt
+          key: rt-${{ env.RT_COMMIT_HASH }}
+      - name: "Download and compile runtime on cache miss"
+        if: steps.cache-rt.outputs.cache-hit != 'true'
+        run: |
+          git clone --branch linux https://github.com/utah-cs4470-sp25/runtime.git rt
+          mkdir -p rt-cache
+          (cd rt && make && cp -r . ../rt-cache)
   compiles:
     name: "Runs `make compile`"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - run: make compile
+      - name: "Checkout code"
+        uses: actions/checkout@master
+      - name: "Compile code"
+        run: make compile
+      - name: "Save compiled files"
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-files
+          path: ./
   parts:
-    name: "Grades assignment"
+    name: "Grade assignment"
     runs-on: ubuntu-latest
-    needs: [compiles]
+    needs: [compiles, prepare-runtime]
     strategy:
       fail-fast: false
       matrix:
-        part: [ 1, 2, 3, 4, 5, 6 ]
+        part: [1, 2, 3, 4, 5, 6]
     steps:
-      - uses: actions/checkout@master
-      - run: make compile
+      - name: "Download repo with compiled code"
+        uses: actions/download-artifact@v4
+        with:
+          name: compiled-files
+      - name: "Install nasm"
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: nasm
+          version: 1.0
+      - name: "Get rt repo commit hash"
+        run: |
+          git ls-remote https://github.com/utah-cs4470-sp25/runtime.git refs/heads/main | cut -f 1 > rt_commit.txt
+          echo "RT_COMMIT_HASH=$(cat rt_commit.txt)" >> $GITHUB_ENV
+      - name: "Restore runtime cache"
+        uses: actions/cache@v4
+        with:
+          path: rt
+          key: rt-${{ env.RT_COMMIT_HASH }}
+      - name: "Allow execution of compiled files"
+        run: |
+          chmod +x *
       - name: "Downloads grader scripts"
         uses: actions/checkout@master
         with:
-          repository: utah-cs4470-fa26/grader
+          repository: utah-cs4470-sp25/grader
           path: grader
       - name: "Counts total parts"
-        run: echo HW_PARTS=$(make -s -C grader count-current) >> $GITHUB_ENV
+        run: echo HW_PARTS=$(make -s -C grader count-current) >> $GITHUB_ENV; echo $HW_PARTS
       - name: Total of ${{ env.HW_PARTS }} parts
         run: true
       - name: Grade part ${{ matrix.part }}
         if: matrix.part <= env.HW_PARTS
-        timeout-minutes: 5
+        timeout-minutes: 10
         run: make -C grader test-current DIR=$GITHUB_WORKSPACE PART=${{ matrix.part }}
-
