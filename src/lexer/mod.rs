@@ -39,7 +39,7 @@ const PUNCTUATION: [(&'static str, TokenKind); 8] = [
     ("]", TokenKind::RSquare),
 ];
 
-const OPERATORS: [(&'static str, TokenKind); 15] = [
+const OPERATORS: [(&'static str, TokenKind); 16] = [
     ("&&", TokenKind::Op),
     ("||", TokenKind::Op),
     ("==", TokenKind::Op),
@@ -54,6 +54,7 @@ const OPERATORS: [(&'static str, TokenKind); 15] = [
     (">", TokenKind::Op),
     ("!", TokenKind::Op),
     (".", TokenKind::Dot),
+    ("%", TokenKind::Op),
     ("=", TokenKind::Equals),
 ];
 
