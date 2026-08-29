@@ -1,13 +1,16 @@
+use std::process::ExitCode;
+
 use crate::{error, lexer};
 
 mod print;
 
-pub fn run() {
+#[must_use]
+pub fn run() -> ExitCode {
     let Config { filename, mode } = match parse_args() {
         Ok(config) => config,
         Err(e) => {
             println!("Error: {e:?}");
-            std::process::exit(1);
+            return ExitCode::from(1);
         }
     };
 
@@ -15,7 +18,7 @@ pub fn run() {
         Ok(program) => program,
         Err(e) => {
             println!("Compilation failed: could not read file '{filename}': {e}");
-            std::process::exit(1);
+            return ExitCode::from(1);
         }
     };
 
@@ -24,7 +27,7 @@ pub fn run() {
         Err(lex_errors) => {
             error::lex::print_validation_error(lex_errors);
             println!("Compilation failed: lexical analysis failed");
-            std::process::exit(1);
+            return ExitCode::from(1);
         }
     };
 
@@ -33,7 +36,7 @@ pub fn run() {
         Err(lex_errors) => {
             error::lex::print_lex_error(lex_errors, &program);
             println!("Compilation failed: lexical analysis failed");
-            std::process::exit(1);
+            return ExitCode::from(1);
         }
     };
 
@@ -42,8 +45,10 @@ pub fn run() {
     {
         print::lex::print_tokens(tokens);
         println!("Compilation succeeded: lexical analysis complete");
-        return;
+        return ExitCode::from(0);
     }
+
+    todo!()
 }
 
 fn parse_args() -> Result<Config, CliError> {
