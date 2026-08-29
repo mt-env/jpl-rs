@@ -61,7 +61,8 @@ pub enum TokenKind {
 }
 
 impl<'a> Token<'a> {
-    pub fn new(kind: TokenKind, offset: usize, str: &'a str) -> Self {
+    #[must_use]
+    pub const fn new(kind: TokenKind, offset: usize, str: &'a str) -> Self {
         Token { kind, offset, str }
     }
 }

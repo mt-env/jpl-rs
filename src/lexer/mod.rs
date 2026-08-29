@@ -2,7 +2,7 @@ use crate::lexer::token::{IllegalByteError, LexError, Token, TokenKind};
 
 pub mod token;
 
-const KEYWORDS: [(&'static str, TokenKind); 23] = [
+const KEYWORDS: [(&str, TokenKind); 23] = [
     ("array", TokenKind::Array),
     ("assert", TokenKind::Assert),
     ("bool", TokenKind::BoolType),
@@ -28,7 +28,7 @@ const KEYWORDS: [(&'static str, TokenKind); 23] = [
     ("write", TokenKind::Write),
 ];
 
-const PUNCTUATION: [(&'static str, TokenKind); 8] = [
+const PUNCTUATION: [(&str, TokenKind); 8] = [
     (":", TokenKind::Colon),
     (",", TokenKind::Comma),
     ("{", TokenKind::LCurly),
@@ -39,7 +39,7 @@ const PUNCTUATION: [(&'static str, TokenKind); 8] = [
     ("]", TokenKind::RSquare),
 ];
 
-const OPERATORS: [(&'static str, TokenKind); 16] = [
+const OPERATORS: [(&str, TokenKind); 16] = [
     ("&&", TokenKind::Op),
     ("||", TokenKind::Op),
     ("==", TokenKind::Op),
@@ -69,14 +69,14 @@ pub fn validate_source(program: Vec<u8>) -> Result<String, Vec<IllegalByteError>
             byte: *byte,
         });
     }
-    if !errors.is_empty() {
-        Err(errors)
-    } else {
+    if errors.is_empty() {
         unsafe { Ok(String::from_utf8(program).unwrap_unchecked()) } // safe because we just checked all bytes
+    } else {
+        Err(errors)
     }
 }
 
-pub fn lex<'a>(program: &'a str) -> Result<Vec<Token<'a>>, Vec<LexError>> {
+pub fn lex(program: &str) -> Result<Vec<Token<'_>>, Vec<LexError>> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut errors = Vec::new();
     let mut curr_pos = 0;
@@ -112,7 +112,7 @@ pub fn lex<'a>(program: &'a str) -> Result<Vec<Token<'a>>, Vec<LexError>> {
     }
 }
 
-fn next_token<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError>, usize) {
+fn next_token(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
     // nuke all whitespace and comments at the start of the token
     let mut next = start;
     loop {
@@ -135,17 +135,17 @@ fn next_token<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError
     };
 
     // if first letter is alphabetic, read until neither alphanumeric nor underscore
-    if matches!(first_char, b'a'..=b'z' | b'A'..=b'Z') {
+    if first_char.is_ascii_alphabetic() {
         return read_alpha(program, next);
     }
 
     // read numeric
-    if matches!(first_char, b'0'..=b'9')
+    if first_char.is_ascii_digit()
         || (first_char == &b'.'
             && program
                 .as_bytes()
                 .get(next + 1)
-                .map_or(false, |c| matches!(c, b'0'..=b'9')))
+                .is_some_and(u8::is_ascii_digit))
     {
         return read_numeric(program, next);
     }
@@ -179,10 +179,10 @@ fn next_token<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError
         return (Ok(token), next);
     }
 
-    return (
+    (
         Err(LexError::IllegalCharacter(next, *first_char as char)),
         next + 1,
-    );
+    )
 }
 
 fn skip_whitespace(program: &str, start: usize) -> usize {
@@ -224,7 +224,7 @@ fn skip_escaped_newline(program: &str, start: usize) -> usize {
     start
 }
 
-fn read_alpha<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError>, usize) {
+fn read_alpha(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
     let mut pos = start;
     while pos < program.len()
         && matches!(program.as_bytes()[pos], b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_')
@@ -241,7 +241,7 @@ fn read_alpha<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError
     (Ok(Token::new(TokenKind::Variable, start, token_str)), pos)
 }
 
-fn read_string_literal<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError>, usize) {
+fn read_string_literal(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
     let mut pos = start + 1; // skip opening quote
     while pos < program.len() && program.as_bytes()[pos] != b'"' && program.as_bytes()[pos] != b'\n'
     {
@@ -251,13 +251,13 @@ fn read_string_literal<'a>(program: &'a str, start: usize) -> (Result<Token<'a>,
     if pos >= program.len() || program.as_bytes()[pos] != b'"' {
         return (Err(LexError::UnterminatedString(start)), pos);
     }
-    return (
+    (
         Ok(Token::new(TokenKind::String, start, &program[start..=pos])),
         pos + 1,
-    );
+    )
 }
 
-fn read_numeric<'a>(program: &'a str, start: usize) -> (Result<Token<'a>, LexError>, usize) {
+fn read_numeric(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
     let mut pos = start;
     let mut has_decimal = false;
 

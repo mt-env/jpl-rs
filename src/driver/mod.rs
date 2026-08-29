@@ -6,7 +6,7 @@ pub fn run() {
     let Config { filename, mode } = match parse_args() {
         Ok(config) => config,
         Err(e) => {
-            println!("Error: {:?}", e);
+            println!("Error: {e:?}");
             std::process::exit(1);
         }
     };
@@ -14,10 +14,7 @@ pub fn run() {
     let program = match std::fs::read(&filename) {
         Ok(program) => program,
         Err(e) => {
-            println!(
-                "Compilation failed: could not read file '{}': {}",
-                filename, e
-            );
+            println!("Compilation failed: could not read file '{filename}': {e}");
             std::process::exit(1);
         }
     };
@@ -49,13 +46,13 @@ pub fn run() {
     }
 }
 
-fn parse_args<'a>() -> Result<Config, CliError> {
+fn parse_args() -> Result<Config, CliError> {
     let mut args = std::env::args();
     let mut filename = None;
     let mut mode = None;
     args.next(); // skip the program name
     for argument in args {
-        if argument.starts_with("-") {
+        if argument.starts_with('-') {
             if mode.is_some() {
                 return Err(CliError::MultipleModesSpecified);
             }
@@ -72,9 +69,8 @@ fn parse_args<'a>() -> Result<Config, CliError> {
         }
     }
 
-    let filename = match filename {
-        Some(filename) => filename,
-        None => return Err(CliError::MissingFilename),
+    let Some(filename) = filename else {
+        return Err(CliError::MissingFilename);
     };
 
     Ok(Config { filename, mode })
@@ -103,9 +99,9 @@ enum CliError {
 impl std::fmt::Debug for CliError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CliError::MissingFilename => write!(f, "Missing filename"),
-            CliError::UnknownOption(option) => write!(f, "Unknown option: {}", option),
-            CliError::MultipleModesSpecified => write!(f, "Multiple modes specified"),
+            Self::MissingFilename => write!(f, "Missing filename"),
+            Self::UnknownOption(option) => write!(f, "Unknown option: {option}"),
+            Self::MultipleModesSpecified => write!(f, "Multiple modes specified"),
         }
     }
 }

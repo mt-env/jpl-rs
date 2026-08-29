@@ -5,7 +5,7 @@ enum Cmd<'src, 'ast> {
     Assert(&'ast Expr<'src, 'ast>, &'src str),
     Print(&'src str),
     Show(&'ast Expr<'src, 'ast>),
-    Time(&'ast Cmd<'src, 'ast>),
+    Time(&'ast Self),
 }
 
 enum Expr<'src, 'ast> {
@@ -13,7 +13,7 @@ enum Expr<'src, 'ast> {
     Float(f64),
     Bool(bool),
     Var(&'src str),
-    ArrayLiteral(Vec<&'ast Expr<'src, 'ast>>),
+    ArrayLiteral(Vec<&'ast Self>),
 }
 
 enum LValue<'src> {
