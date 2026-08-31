@@ -1,14 +1,27 @@
-enum Cmd<'src, 'ast> {
-    Read(&'src str, &'ast LValue<'src>),
-    Write(&'ast Expr<'src, 'ast>, &'src str),
-    Let(&'ast LValue<'src>, &'ast Expr<'src, 'ast>),
-    Assert(&'ast Expr<'src, 'ast>, &'src str),
+pub type ParsedProgram<'src, 'ast> = Vec<&'ast ParsedCmd<'src, 'ast>>;
+pub type ParsedCmd<'src, 'ast> = Spanned<Cmd<'src, 'ast, ()>>;
+pub type ParsedExpr<'src, 'ast> = Spanned<Expr<'src, 'ast, ()>>;
+pub type ParsedLValue<'src> = Spanned<LValue<'src>>;
+
+pub enum Cmd<'src, 'ast, A> {
+    Read(&'src str, &'ast Spanned<LValue<'src>>),
+    Write(&'ast Spanned<Expr<'src, 'ast, A>>, &'src str),
+    Let(
+        &'ast Spanned<LValue<'src>>,
+        &'ast Spanned<Expr<'src, 'ast, A>>,
+    ),
+    Assert(&'ast Spanned<Expr<'src, 'ast, A>>, &'src str),
     Print(&'src str),
-    Show(&'ast Expr<'src, 'ast>),
-    Time(&'ast Self),
+    Show(&'ast Spanned<Expr<'src, 'ast, A>>),
+    Time(&'ast Spanned<Self>),
 }
 
-enum Expr<'src, 'ast> {
+pub struct Expr<'src, 'ast, A> {
+    ann: A,
+    kind: ExprKind<'src, 'ast>,
+}
+
+pub enum ExprKind<'src, 'ast> {
     Int(i64),
     Float(f64),
     Bool(bool),
@@ -16,6 +29,11 @@ enum Expr<'src, 'ast> {
     ArrayLiteral(Vec<&'ast Self>),
 }
 
-enum LValue<'src> {
+pub enum LValue<'src> {
     Var(&'src str),
+}
+
+pub struct Spanned<T> {
+    offset: usize,
+    value: T,
 }
