@@ -45,6 +45,19 @@ pub enum LValue<'src> {
     Var(&'src str),
 }
 
+impl<'src, 'ast> ParsedLValue<'src> {
+    pub(super) fn new(
+        ctx: &ParserCtx<'src, 'ast>,
+        offset: usize,
+        lvalue: LValue<'src>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned {
+            offset,
+            value: lvalue,
+        })
+    }
+}
+
 pub struct Spanned<T> {
     offset: usize,
     value: T,
