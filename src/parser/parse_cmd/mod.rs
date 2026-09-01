@@ -12,7 +12,11 @@ use crate::{
 pub(super) fn parse_cmd<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
 ) -> Result<&'ast ParsedCmd<'src, 'ast>, ()> {
-    let curr_token = ctx.expect_many(&[
+    let Token {
+        kind,
+        offset,
+        str: _,
+    } = ctx.expect_many(&[
         TokenKind::Read,
         TokenKind::Write,
         TokenKind::Let,
@@ -22,7 +26,7 @@ pub(super) fn parse_cmd<'src, 'ast>(
         TokenKind::Time,
     ])?;
 
-    match curr_token.kind {
+    let cmd_kind = match kind {
         TokenKind::Read => parse_read(ctx),
         TokenKind::Write => parse_write(ctx),
         TokenKind::Let => parse_let(ctx),
@@ -31,78 +35,58 @@ pub(super) fn parse_cmd<'src, 'ast>(
         TokenKind::Show => parse_show(ctx),
         TokenKind::Time => parse_time(ctx),
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
-    }
+    };
+    Ok(ParsedCmd::new(ctx, offset, cmd_kind?))
 }
 
-fn parse_read<'src, 'ast>(
-    ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<&'ast ParsedCmd<'src, 'ast>, ()> {
-    let Token { offset, .. } = ctx.expect(TokenKind::Read)?;
+fn parse_read<'src, 'ast>(ctx: &mut ParserCtx<'src, 'ast>) -> Result<Cmd<'src, 'ast, ()>, ()> {
     ctx.expect(TokenKind::Image)?;
     let Token { str, .. } = ctx.expect(TokenKind::String)?;
     ctx.expect(TokenKind::To)?;
     let lvalue = parse_lvalue::parse_lvalue(ctx)?;
     ctx.expect(TokenKind::NewLine)?;
-    Ok(ParsedCmd::new(ctx, offset, Cmd::Read(str, lvalue)))
+    Ok(Cmd::Read(str, lvalue))
 }
 
-fn parse_write<'src, 'ast>(
-    ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<&'ast ParsedCmd<'src, 'ast>, ()> {
-    let Token { offset, .. } = ctx.expect(TokenKind::Write)?;
+fn parse_write<'src, 'ast>(ctx: &mut ParserCtx<'src, 'ast>) -> Result<Cmd<'src, 'ast, ()>, ()> {
     ctx.expect(TokenKind::Image)?;
     let expr = parse_expr::parse_expr(ctx)?;
     ctx.expect(TokenKind::To)?;
     let Token { str, .. } = ctx.expect(TokenKind::String)?;
     ctx.expect(TokenKind::NewLine)?;
-    Ok(ParsedCmd::new(ctx, offset, Cmd::Write(expr, str)))
+    Ok(Cmd::Write(expr, str))
 }
 
-fn parse_let<'src, 'ast>(
-    ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<&'ast ParsedCmd<'src, 'ast>, ()> {
-    let Token { offset, .. } = ctx.expect(TokenKind::Let)?;
+fn parse_let<'src, 'ast>(ctx: &mut ParserCtx<'src, 'ast>) -> Result<Cmd<'src, 'ast, ()>, ()> {
     let lvalue = parse_lvalue::parse_lvalue(ctx)?;
     ctx.expect(TokenKind::Equals)?;
     let expr = parse_expr::parse_expr(ctx)?;
     ctx.expect(TokenKind::NewLine)?;
-    Ok(ParsedCmd::new(ctx, offset, Cmd::Let(lvalue, expr)))
+    Ok(Cmd::Let(lvalue, expr))
 }
 
-fn parse_assert<'src, 'ast>(
-    ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<&'ast ParsedCmd<'src, 'ast>, ()> {
-    let Token { offset, .. } = ctx.expect(TokenKind::Assert)?;
+fn parse_assert<'src, 'ast>(ctx: &mut ParserCtx<'src, 'ast>) -> Result<Cmd<'src, 'ast, ()>, ()> {
     let expr = parse_expr::parse_expr(ctx)?;
     ctx.expect(TokenKind::Comma)?;
     let Token { str, .. } = ctx.expect(TokenKind::String)?;
     ctx.expect(TokenKind::NewLine)?;
-    Ok(ParsedCmd::new(ctx, offset, Cmd::Assert(expr, str)))
+    Ok(Cmd::Assert(expr, str))
 }
 
-fn parse_print<'src, 'ast>(
-    ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<&'ast ParsedCmd<'src, 'ast>, ()> {
-    let Token { offset, .. } = ctx.expect(TokenKind::Print)?;
+fn parse_print<'src, 'ast>(ctx: &mut ParserCtx<'src, 'ast>) -> Result<Cmd<'src, 'ast, ()>, ()> {
     let Token { str, .. } = ctx.expect(TokenKind::String)?;
     ctx.expect(TokenKind::NewLine)?;
-    Ok(ParsedCmd::new(ctx, offset, Cmd::Print(str)))
+    Ok(Cmd::Print(str))
 }
 
-fn parse_show<'src, 'ast>(
-    ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<&'ast ParsedCmd<'src, 'ast>, ()> {
-    let Token { offset, .. } = ctx.expect(TokenKind::Show)?;
+fn parse_show<'src, 'ast>(ctx: &mut ParserCtx<'src, 'ast>) -> Result<Cmd<'src, 'ast, ()>, ()> {
     let expr = parse_expr::parse_expr(ctx)?;
     ctx.expect(TokenKind::NewLine)?;
-    Ok(ParsedCmd::new(ctx, offset, Cmd::Show(expr)))
+    Ok(Cmd::Show(expr))
 }
 
-fn parse_time<'src, 'ast>(
-    ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<&'ast ParsedCmd<'src, 'ast>, ()> {
-    let Token { offset, .. } = ctx.expect(TokenKind::Time)?;
+fn parse_time<'src, 'ast>(ctx: &mut ParserCtx<'src, 'ast>) -> Result<Cmd<'src, 'ast, ()>, ()> {
     let cmd = parse_cmd(ctx)?;
     ctx.expect(TokenKind::NewLine)?;
-    Ok(ParsedCmd::new(ctx, offset, Cmd::Time(cmd)))
+    Ok(Cmd::Time(cmd))
 }
