@@ -119,7 +119,10 @@ fn next_token(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usiz
         let previous = next;
         next = skip_whitespace(program, next);
         next = skip_line_comment(program, next);
-        next = skip_block_comment(program, next);
+        next = match skip_block_comment(program, next) {
+            (pos, Ok(())) => pos,
+            (pos, Err(e)) => return (Err(e), pos),
+        };
         next = skip_escaped_newline(program, next);
 
         if next == previous {
@@ -196,20 +199,26 @@ fn skip_line_comment(program: &str, start: usize) -> usize {
     pos
 }
 
-fn skip_block_comment(program: &str, start: usize) -> usize {
+fn skip_block_comment(program: &str, start: usize) -> (usize, Result<(), LexError>) {
     let mut pos = start;
     if let Some(slice) = program.get(start..)
         && slice.starts_with("/*")
     {
         pos += 2;
-        while pos < program.len() && !program[pos..].starts_with("*/") {
+
+        while let Some(slice) = program.get(pos..)
+            && !slice.starts_with("*/")
+        {
             pos += 1;
         }
-        if pos < program.len() {
-            pos += 2;
+
+        if pos + 1 >= program.len() {
+            return (pos, Err(LexError::UnterminatedComment(start)));
         }
+
+        pos += 2;
     }
-    pos
+    (pos, Ok(()))
 }
 
 fn skip_escaped_newline(program: &str, start: usize) -> usize {

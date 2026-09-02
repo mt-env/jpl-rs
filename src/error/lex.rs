@@ -34,6 +34,9 @@ impl Display for LexError {
             Self::IllegalCharacter(offset, c) => {
                 write!(f, "Illegal character '{c}' at offset {offset}")
             }
+            Self::UnterminatedComment(offset) => {
+                write!(f, "Unterminated comment at offset {offset}")
+            }
         }
     }
 }
