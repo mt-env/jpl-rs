@@ -70,7 +70,7 @@ impl<'a> Token<'a> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LexError {
     UnterminatedString(usize),
-    IllegalCharacter(usize, char),
+    IllegalCharacter(usize, u8),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

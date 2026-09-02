@@ -153,15 +153,10 @@ fn next_token(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usiz
     // check punctuation + operators
     let hardcoded_tokens = PUNCTUATION.iter().chain(OPERATORS.iter());
     for (keyword, kind) in hardcoded_tokens {
-        if program[next..].starts_with(keyword) {
-            return (
-                Ok(Token::new(
-                    *kind,
-                    next,
-                    &program[next..next + keyword.len()],
-                )),
-                next + keyword.len(),
-            );
+        if let Some(slice) = program.get(next..)
+            && slice.starts_with(keyword)
+        {
+            return (Ok(Token::new(*kind, next, keyword)), next + keyword.len());
         }
     }
 
@@ -173,21 +168,15 @@ fn next_token(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usiz
     // read newline
     if first_char == &b'\n' {
         let token = Token::new(TokenKind::NewLine, next, "\n");
-        while next < program.len() && program.as_bytes()[next] == b'\n' {
-            next += 1;
-        }
-        return (Ok(token), next);
+        return (Ok(token), next + 1);
     }
 
-    (
-        Err(LexError::IllegalCharacter(next, *first_char as char)),
-        next + 1,
-    )
+    (Err(LexError::IllegalCharacter(next, *first_char)), next + 1)
 }
 
 fn skip_whitespace(program: &str, start: usize) -> usize {
     let mut pos = start;
-    while pos < program.len() && program.as_bytes()[pos] == b' ' {
+    while program.as_bytes().get(pos) == Some(&b' ') {
         pos += 1;
     }
     pos
@@ -195,8 +184,12 @@ fn skip_whitespace(program: &str, start: usize) -> usize {
 
 fn skip_line_comment(program: &str, start: usize) -> usize {
     let mut pos = start;
-    if program[start..].starts_with("//") {
-        while pos < program.len() && program.as_bytes()[pos] != b'\n' {
+    if let Some(slice) = program.get(start..)
+        && slice.starts_with("//")
+    {
+        while let Some(c) = program.as_bytes().get(pos)
+            && c != &b'\n'
+        {
             pos += 1;
         }
     }
@@ -205,7 +198,9 @@ fn skip_line_comment(program: &str, start: usize) -> usize {
 
 fn skip_block_comment(program: &str, start: usize) -> usize {
     let mut pos = start;
-    if program[start..].starts_with("/*") {
+    if let Some(slice) = program.get(start..)
+        && slice.starts_with("/*")
+    {
         pos += 2;
         while pos < program.len() && !program[pos..].starts_with("*/") {
             pos += 1;
@@ -218,7 +213,9 @@ fn skip_block_comment(program: &str, start: usize) -> usize {
 }
 
 fn skip_escaped_newline(program: &str, start: usize) -> usize {
-    if program[start..].starts_with("\\\n") {
+    if let Some(slice) = program.get(start..)
+        && slice.starts_with("\\\n")
+    {
         return start + 2;
     }
     start
@@ -226,12 +223,14 @@ fn skip_escaped_newline(program: &str, start: usize) -> usize {
 
 fn read_alpha(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
     let mut pos = start;
-    while pos < program.len()
-        && matches!(program.as_bytes()[pos], b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_')
+    while let Some(&c) = program.as_bytes().get(pos)
+        && (c.is_ascii_alphanumeric() || c == b'_')
     {
         pos += 1;
     }
-    let token_str = &program[start..pos];
+    // safe - only way pos is OOB is if it's right at the end of the program
+    // in which case indexing to the end of the program is valid
+    let token_str = unsafe { program.get_unchecked(start..pos) };
     for keyword in KEYWORDS {
         if token_str == keyword.0 {
             return (Ok(Token::new(keyword.1, start, token_str)), pos);
@@ -243,28 +242,29 @@ fn read_alpha(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usiz
 
 fn read_string_literal(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
     let mut pos = start + 1; // skip opening quote
-    while pos < program.len() && program.as_bytes()[pos] != b'"' && program.as_bytes()[pos] != b'\n'
-    {
+
+    while let Some(&c) = program.as_bytes().get(pos) {
+        if c == b'"' {
+            // safe - the `while let` guarantees we're in bounds
+            let token_str = unsafe { program.get_unchecked(start..=pos) };
+            return (Ok(Token::new(TokenKind::String, start, token_str)), pos + 1);
+        }
+        if c == b'\n' {
+            return (Err(LexError::UnterminatedString(start)), pos);
+        }
         pos += 1;
     }
-
-    if pos >= program.len() || program.as_bytes()[pos] != b'"' {
-        return (Err(LexError::UnterminatedString(start)), pos);
-    }
-    (
-        Ok(Token::new(TokenKind::String, start, &program[start..=pos])),
-        pos + 1,
-    )
+    (Err(LexError::UnterminatedString(start)), pos)
 }
 
 fn read_numeric(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
     let mut pos = start;
     let mut has_decimal = false;
 
-    while pos < program.len() {
-        match program.as_bytes()[pos] {
-            b'0'..=b'9' => pos += 1,
-            b'.' if !has_decimal => {
+    loop {
+        match program.as_bytes().get(pos) {
+            Some(b'0'..=b'9') => pos += 1,
+            Some(b'.') if !has_decimal => {
                 has_decimal = true;
                 pos += 1;
             }
@@ -272,7 +272,9 @@ fn read_numeric(program: &str, start: usize) -> (Result<Token<'_>, LexError>, us
         }
     }
 
-    let token_str = &program[start..pos];
+    // safe - only way pos is OOB is if it's right at the end of the program
+    // in which case indexing to the end of the program is valid
+    let token_str = unsafe { program.get_unchecked(start..pos) };
     if has_decimal {
         (Ok(Token::new(TokenKind::FloatVal, start, token_str)), pos)
     } else {
