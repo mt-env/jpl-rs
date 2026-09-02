@@ -31,6 +31,13 @@ impl<'src, 'ast> ParserCtx<'src, 'ast> {
         }
     }
 
+    pub(super) fn peek_is(&self, expected: TokenKind) -> bool {
+        match self.peek() {
+            Some(token) if token.kind == expected => true,
+            _ => false, // TODO - handle - infinite loop?
+        }
+    }
+
     pub(super) fn expect_many(&mut self, expected: &[TokenKind]) -> Result<Token<'src>, ()> {
         for expected_kind in expected {
             if let Ok(token) = self.expect(*expected_kind) {

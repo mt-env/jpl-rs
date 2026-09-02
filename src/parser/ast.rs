@@ -30,15 +30,31 @@ impl<'src, 'ast> ParsedCmd<'src, 'ast> {
 
 pub struct Expr<'src, 'ast, A> {
     ann: A,
-    kind: ExprKind<'src, 'ast>,
+    kind: ExprKind<'src, 'ast, A>,
 }
 
-pub enum ExprKind<'src, 'ast> {
+pub enum ExprKind<'src, 'ast, A> {
     Int(i64),
     Float(f64),
     Bool(bool),
     Var(&'src str),
-    ArrayLiteral(Vec<&'ast Self>),
+    ArrayLiteral(Vec<&'ast Spanned<Expr<'src, 'ast, A>>>),
+}
+
+impl<'src, 'ast> ParsedExpr<'src, 'ast> {
+    pub(super) fn new(
+        ctx: &ParserCtx<'src, 'ast>,
+        offset: usize,
+        expr: ExprKind<'src, 'ast, ()>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned {
+            offset,
+            value: Expr {
+                ann: (),
+                kind: expr,
+            },
+        })
+    }
 }
 
 pub enum LValue<'src> {
