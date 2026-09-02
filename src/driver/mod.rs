@@ -1,6 +1,8 @@
 use std::process::ExitCode;
 
-use crate::{error, lexer};
+use bumpalo::Bump;
+
+use crate::{error, lexer, parser};
 
 mod print;
 
@@ -45,6 +47,24 @@ pub fn run() -> ExitCode {
     {
         print::lex::print_tokens(tokens);
         println!("Compilation succeeded: lexical analysis complete");
+        return ExitCode::from(0);
+    }
+
+    let mut ast_alloc = Bump::new();
+    let parsed_program = match parser::parse(&mut ast_alloc, tokens) {
+        Ok(parsed_program) => parsed_program,
+        Err(parse_errors) => {
+            // error::parse::print_parse_error(parse_errors, &program);
+            println!("Compilation failed: parsing failed");
+            return ExitCode::from(1);
+        }
+    };
+
+    if let Some(mode) = mode
+        && mode == Mode::Parse
+    {
+        print::parse::print_sexp(parsed_program);
+        println!("Compilation succeeded: parsing complete");
         return ExitCode::from(0);
     }
 
