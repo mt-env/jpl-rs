@@ -27,7 +27,7 @@ impl<'src, 'ast> ParserCtx<'src, 'ast> {
                 self.curr_pos += 1;
                 Ok(token)
             }
-            _ => todo!(),
+            _ => Err(()), // TODO - handle
         }
     }
 
