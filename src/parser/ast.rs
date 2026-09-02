@@ -29,8 +29,8 @@ impl<'src, 'ast> ParsedCmd<'src, 'ast> {
 }
 
 pub struct Expr<'src, 'ast, A> {
-    ann: A,
-    kind: ExprKind<'src, 'ast, A>,
+    pub ann: A,
+    pub kind: ExprKind<'src, 'ast, A>,
 }
 
 pub enum ExprKind<'src, 'ast, A> {
@@ -75,6 +75,6 @@ impl<'src, 'ast> ParsedLValue<'src> {
 }
 
 pub struct Spanned<T> {
-    offset: usize,
-    value: T,
+    pub offset: usize,
+    pub value: T,
 }
