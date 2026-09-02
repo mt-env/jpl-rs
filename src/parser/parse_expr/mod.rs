@@ -29,18 +29,16 @@ fn parse_float<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
 ) -> Result<ExprKind<'src, 'ast, ()>, ()> {
     let Token { str, .. } = ctx.expect(TokenKind::FloatVal)?;
-    let parsed_float = match str.parse::<f64>() {
-        Ok(f) => f,
-        Err(_) => return Err(()),
+    let Ok(parsed_float) = str.parse::<f64>() else {
+        return Err(()); // TODO real error handling
     };
     Ok(ExprKind::Float(parsed_float))
 }
 
 fn parse_int<'src, 'ast>(ctx: &mut ParserCtx<'src, 'ast>) -> Result<ExprKind<'src, 'ast, ()>, ()> {
     let Token { str, .. } = ctx.expect(TokenKind::IntVal)?;
-    let parsed_int = match str.parse::<i64>() {
-        Ok(i) => i,
-        Err(_) => return Err(()),
+    let Ok(parsed_int) = str.parse::<i64>() else {
+        return Err(()); // TODO real error handling
     };
     Ok(ExprKind::Int(parsed_int))
 }
@@ -62,5 +60,5 @@ fn parse_array_literal<'src, 'ast>(
             break;
         }
     }
-    return Ok(ExprKind::ArrayLiteral(elements));
+    Ok(ExprKind::ArrayLiteral(elements))
 }

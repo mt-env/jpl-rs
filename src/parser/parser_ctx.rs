@@ -9,7 +9,7 @@ pub(super) struct ParserCtx<'src, 'ast> {
 }
 
 impl<'src, 'ast> ParserCtx<'src, 'ast> {
-    pub(super) fn new(alloc: &'ast mut Bump, tokens: Vec<Token<'src>>) -> ParserCtx<'src, 'ast> {
+    pub(super) const fn new(alloc: &'ast Bump, tokens: Vec<Token<'src>>) -> Self {
         ParserCtx {
             alloc,
             tokens,
