@@ -2,13 +2,13 @@ use crate::{
     lexer::token::{Token, TokenKind},
     parser::{
         ParserCtx,
-        ast::{LValue, ParsedLValue},
+        ast::{LValue, ParseError, ParsedLValue},
     },
 };
 
 pub(super) fn parse_lvalue<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<&'ast ParsedLValue<'src>, ()> {
+) -> Result<&'ast ParsedLValue<'src>, ParseError<'src>> {
     let Token {
         str,
         offset,

@@ -2,15 +2,15 @@ use crate::{
     lexer::token::{Token, TokenKind},
     parser::{
         ParserCtx,
-        ast::{ExprKind, ParsedExpr},
+        ast::{ExprKind, ParseError, ParseErrorKind, ParsedExpr},
     },
 };
 
 pub(super) fn parse_expr<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<&'ast ParsedExpr<'src, 'ast>, ()> {
+) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
     let Some(Token { str, offset, kind }) = ctx.peek() else {
-        return Err(());
+        todo!()
     };
     let kind = match kind {
         TokenKind::True => ExprKind::Bool(true),
@@ -27,25 +27,33 @@ pub(super) fn parse_expr<'src, 'ast>(
 
 fn parse_float<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<ExprKind<'src, 'ast, ()>, ()> {
-    let Token { str, .. } = ctx.expect(TokenKind::FloatVal)?;
+) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
+    let Token { offset, str, .. } = ctx.expect(TokenKind::FloatVal)?;
     let Ok(parsed_float) = str.parse::<f64>() else {
-        return Err(()); // TODO real error handling
+        return Err(ParseError::new(
+            offset,
+            ParseErrorKind::InvalidFloatLiteral(str),
+        ));
     };
     Ok(ExprKind::Float(parsed_float))
 }
 
-fn parse_int<'src, 'ast>(ctx: &mut ParserCtx<'src, 'ast>) -> Result<ExprKind<'src, 'ast, ()>, ()> {
-    let Token { str, .. } = ctx.expect(TokenKind::IntVal)?;
+fn parse_int<'src, 'ast>(
+    ctx: &mut ParserCtx<'src, 'ast>,
+) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
+    let Token { offset, str, .. } = ctx.expect(TokenKind::IntVal)?;
     let Ok(parsed_int) = str.parse::<i64>() else {
-        return Err(()); // TODO real error handling
+        return Err(ParseError::new(
+            offset,
+            ParseErrorKind::InvalidIntLiteral(str),
+        ));
     };
     Ok(ExprKind::Int(parsed_int))
 }
 
 fn parse_array_literal<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<ExprKind<'src, 'ast, ()>, ()> {
+) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
     ctx.expect(TokenKind::LSquare)?;
     let mut elements = Vec::new();
     loop {

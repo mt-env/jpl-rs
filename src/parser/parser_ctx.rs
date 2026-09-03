@@ -1,6 +1,9 @@
 use bumpalo::Bump;
 
-use crate::lexer::token::{Token, TokenKind};
+use crate::{
+    lexer::token::{Token, TokenKind},
+    parser::ast::ParseError,
+};
 
 pub(super) struct ParserCtx<'src, 'ast> {
     alloc: &'ast Bump,
@@ -21,24 +24,27 @@ impl<'src, 'ast> ParserCtx<'src, 'ast> {
         self.tokens.get(self.curr_pos).copied()
     }
 
-    pub(super) fn expect(&mut self, expected: TokenKind) -> Result<Token<'src>, ()> {
+    pub(super) fn expect(&mut self, expected: TokenKind) -> Result<Token<'src>, ParseError<'src>> {
         match self.peek() {
             Some(token) if token.kind == expected => {
                 self.curr_pos += 1;
                 Ok(token)
             }
-            _ => Err(()), // TODO - handle
+            _ => todo!(),
         }
     }
 
     pub(super) fn peek_is(&self, expected: TokenKind) -> bool {
         match self.peek() {
             Some(token) if token.kind == expected => true,
-            _ => false, // TODO - handle - infinite loop?
+            _ => todo!(),
         }
     }
 
-    pub(super) fn expect_many(&mut self, expected: &[TokenKind]) -> Result<Token<'src>, ()> {
+    pub(super) fn expect_many(
+        &mut self,
+        expected: &[TokenKind],
+    ) -> Result<Token<'src>, ParseError<'src>> {
         for expected_kind in expected {
             if let Ok(token) = self.expect(*expected_kind) {
                 return Ok(token);

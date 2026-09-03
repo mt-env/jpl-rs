@@ -1,4 +1,4 @@
-use crate::parser::ParserCtx;
+use crate::{lexer::token::TokenKind, parser::ParserCtx};
 
 pub type ParsedProgram<'src, 'ast> = Vec<&'ast ParsedCmd<'src, 'ast>>;
 pub type ParsedCmd<'src, 'ast> = Spanned<Cmd<'src, 'ast, ()>>;
@@ -77,4 +77,25 @@ impl<'src, 'ast> ParsedLValue<'src> {
 pub struct Spanned<T> {
     pub offset: usize,
     pub value: T,
+}
+
+pub enum ParseErrorKind<'src> {
+    InvalidIntLiteral(&'src str),
+    InvalidFloatLiteral(&'src str),
+    UnexpectedToken {
+        expected: Vec<TokenKind>,
+        found: TokenKind,
+    },
+}
+
+pub type ParseError<'src> = Spanned<ParseErrorKind<'src>>;
+
+impl<'src> ParseError<'src> {
+    #[must_use]
+    pub const fn new(offset: usize, kind: ParseErrorKind<'src>) -> Self {
+        Spanned {
+            offset,
+            value: kind,
+        }
+    }
 }

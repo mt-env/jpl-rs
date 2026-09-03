@@ -2,7 +2,10 @@ use bumpalo::Bump;
 
 use crate::{
     lexer::token::{Token, TokenKind},
-    parser::{ast::ParsedProgram, parser_ctx::ParserCtx},
+    parser::{
+        ast::{ParseError, ParsedProgram},
+        parser_ctx::ParserCtx,
+    },
 };
 
 pub mod ast;
@@ -14,13 +17,22 @@ mod parser_ctx;
 pub fn parse<'src, 'ast>(
     alloc: &'ast mut Bump,
     tokens: Vec<Token<'src>>,
-) -> Result<ParsedProgram<'src, 'ast>, ()> {
+) -> Result<ParsedProgram<'src, 'ast>, Vec<ParseError<'src>>> {
     let mut parser_ctx = ParserCtx::new(alloc, tokens);
     let mut parsed_program = Vec::new();
+    let mut parse_errors = Vec::new();
     while let Some(token) = parser_ctx.peek()
         && token.kind != TokenKind::EndOfFile
     {
-        parsed_program.push(parse_cmd::parse_cmd(&mut parser_ctx)?);
+        // parsed_program.push(parse_cmd::parse_cmd(&mut parser_ctx)?);
+        match parse_cmd::parse_cmd(&mut parser_ctx) {
+            Ok(cmd) => parsed_program.push(cmd),
+            Err(e) => parse_errors.push(e),
+        }
+    }
+
+    if !parse_errors.is_empty() {
+        return Err(parse_errors);
     }
     Ok(parsed_program)
 }
