@@ -1,3 +1,5 @@
+use std::hint::unreachable_unchecked;
+
 use crate::{
     lexer::token::{Token, TokenKind},
     parser::{
@@ -9,20 +11,32 @@ use crate::{
 pub(super) fn parse_expr<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
 ) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
-    let Some(Token { str, offset, kind }) = ctx.peek() else {
+    let Some(Token { offset, kind, .. }) = ctx.peek() else {
         todo!()
     };
     let kind = match kind {
-        TokenKind::True => ExprKind::Bool(true),
-        TokenKind::False => ExprKind::Bool(false),
+        TokenKind::True => parse_bool(ctx)?,
+        TokenKind::False => parse_bool(ctx)?,
         TokenKind::FloatVal => parse_float(ctx)?,
         TokenKind::IntVal => parse_int(ctx)?,
-        TokenKind::Variable => ExprKind::Var(str),
+        TokenKind::Variable => parse_var(ctx)?,
         TokenKind::LSquare => parse_array_literal(ctx)?,
         _ => todo!(),
     };
 
     Ok(ParsedExpr::new(ctx, offset, kind))
+}
+
+fn parse_bool<'src, 'ast>(
+    ctx: &mut ParserCtx<'src, 'ast>,
+) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
+    let Token { kind, .. } = ctx.expect_many(&[TokenKind::True, TokenKind::False])?;
+    let value = match kind {
+        TokenKind::True => true,
+        TokenKind::False => false,
+        _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
+    };
+    Ok(ExprKind::Bool(value))
 }
 
 fn parse_float<'src, 'ast>(
@@ -51,6 +65,13 @@ fn parse_int<'src, 'ast>(
     Ok(ExprKind::Int(parsed_int))
 }
 
+fn parse_var<'src, 'ast>(
+    ctx: &mut ParserCtx<'src, 'ast>,
+) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
+    let Token { str, .. } = ctx.expect(TokenKind::Variable)?;
+    Ok(ExprKind::Var(str))
+}
+
 fn parse_array_literal<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
 ) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
@@ -68,5 +89,6 @@ fn parse_array_literal<'src, 'ast>(
             break;
         }
     }
+    ctx.expect(TokenKind::RSquare)?;
     Ok(ExprKind::ArrayLiteral(elements))
 }
