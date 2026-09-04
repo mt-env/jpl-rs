@@ -2,7 +2,7 @@ use bumpalo::Bump;
 
 use crate::{
     lexer::token::{Token, TokenKind},
-    parser::ast::ParseError,
+    parser::ast::{ParseError, ParseErrorKind},
 };
 
 pub(super) struct ParserCtx<'src, 'ast> {
@@ -30,13 +30,22 @@ impl<'src, 'ast> ParserCtx<'src, 'ast> {
                 self.curr_pos += 1;
                 Ok(token)
             }
-            _ => todo!(),
+            Some(token) => Err(ParseError::new(
+                token.offset,
+                ParseErrorKind::UnexpectedToken {
+                    expected: vec![expected],
+                    found: token.kind,
+                    value: token.str,
+                },
+            )),
+            None => todo!(),
         }
     }
 
     pub(super) fn peek_is(&self, expected: TokenKind) -> bool {
         match self.peek() {
             Some(token) if token.kind == expected => true,
+            Some(_) => false,
             _ => todo!(),
         }
     }

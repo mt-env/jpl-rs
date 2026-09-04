@@ -85,6 +85,7 @@ pub enum ParseErrorKind<'src> {
     UnexpectedToken {
         expected: Vec<TokenKind>,
         found: TokenKind,
+        value: &'src str,
     },
 }
 
