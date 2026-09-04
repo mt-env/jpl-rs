@@ -101,6 +101,5 @@ fn parse_time<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
 ) -> Result<Cmd<'src, 'ast, ()>, ParseError<'src>> {
     let cmd = parse_cmd(ctx)?;
-    ctx.expect(TokenKind::NewLine)?;
     Ok(Cmd::Time(cmd))
 }
