@@ -22,8 +22,18 @@ pub(super) fn parse_expr<'src, 'ast>(
     let kind = match kind {
         TokenKind::True => ExprKind::Bool(true),
         TokenKind::False => ExprKind::Bool(false),
-        TokenKind::FloatVal => parse_float(str, offset)?,
-        TokenKind::IntVal => parse_int(str, offset)?,
+        TokenKind::FloatVal => parse_numeric(
+            str,
+            offset,
+            ExprKind::Float,
+            ParseErrorKind::InvalidFloatLiteral,
+        )?,
+        TokenKind::IntVal => parse_numeric(
+            str,
+            offset,
+            ExprKind::Int,
+            ParseErrorKind::InvalidIntLiteral,
+        )?,
         TokenKind::Variable => ExprKind::Var(str),
         TokenKind::LSquare => parse_array_literal(ctx)?,
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
@@ -32,30 +42,19 @@ pub(super) fn parse_expr<'src, 'ast>(
     Ok(ParsedExpr::new(ctx, offset, kind))
 }
 
-fn parse_float<'src, 'ast>(
+fn parse_numeric<'src, 'ast, T>(
     str: &'src str,
     offset: usize,
-) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
-    let Ok(parsed_float) = str.parse::<f64>() else {
-        return Err(ParseError::new(
-            offset,
-            ParseErrorKind::InvalidFloatLiteral(str),
-        ));
+    kind: impl Fn(T) -> ExprKind<'src, 'ast, ()>,
+    error: impl Fn(&'src str) -> ParseErrorKind,
+) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>>
+where
+    T: std::str::FromStr,
+{
+    let Ok(parsed_numeric) = str.parse::<T>() else {
+        return Err(ParseError::new(offset, error(str)));
     };
-    Ok(ExprKind::Float(parsed_float))
-}
-
-fn parse_int<'src, 'ast>(
-    str: &'src str,
-    offset: usize,
-) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
-    let Ok(parsed_int) = str.parse::<i64>() else {
-        return Err(ParseError::new(
-            offset,
-            ParseErrorKind::InvalidIntLiteral(str),
-        ));
-    };
-    Ok(ExprKind::Int(parsed_int))
+    Ok(kind(parsed_numeric))
 }
 
 fn parse_array_literal<'src, 'ast>(
