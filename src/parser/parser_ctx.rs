@@ -38,15 +38,21 @@ impl<'src, 'ast> ParserCtx<'src, 'ast> {
                     value: token.str,
                 },
             )),
-            None => todo!(),
+            None => Err(ParseError::new(
+                self.tokens.last().map_or(0, |t| t.offset),
+                ParseErrorKind::UnexpectedToken {
+                    expected: vec![expected],
+                    found: TokenKind::EndOfFile,
+                    value: "",
+                },
+            )),
         }
     }
 
     pub(super) fn peek_is(&self, expected: TokenKind) -> bool {
         match self.peek() {
             Some(token) if token.kind == expected => true,
-            Some(_) => false,
-            _ => todo!(),
+            _ => false,
         }
     }
 
@@ -59,7 +65,14 @@ impl<'src, 'ast> ParserCtx<'src, 'ast> {
                 return Ok(token);
             }
         }
-        todo!()
+        Err(ParseError::new(
+            self.peek().map_or(0, |t| t.offset),
+            ParseErrorKind::UnexpectedToken {
+                expected: expected.to_vec(),
+                found: self.peek().map_or(TokenKind::EndOfFile, |t| t.kind),
+                value: self.peek().map_or("", |t| t.str),
+            },
+        ))
     }
 
     pub(super) fn alloc<A>(&self, value: A) -> &'ast A {

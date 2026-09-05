@@ -54,7 +54,7 @@ pub fn run() -> ExitCode {
     let parsed_program = match parser::parse(&mut ast_alloc, tokens) {
         Ok(parsed_program) => parsed_program,
         Err(parse_errors) => {
-            // error::parse::print_parse_error(parse_errors, &program);
+            error::parse::print_parse_error(parse_errors, &program);
             println!("Compilation failed: parsing failed");
             return ExitCode::from(1);
         }
