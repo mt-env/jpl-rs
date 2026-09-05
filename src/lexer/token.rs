@@ -1,3 +1,5 @@
+use crate::parser::ast::Spanned;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Token<'a> {
     pub kind: TokenKind,
@@ -68,10 +70,22 @@ impl<'a> Token<'a> {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LexError {
-    UnterminatedString(usize),
-    UnterminatedComment(usize),
-    IllegalCharacter(usize, u8),
+pub enum LexErrorKind {
+    UnterminatedString,
+    UnterminatedComment,
+    IllegalCharacter(u8),
+}
+
+pub type LexError = Spanned<LexErrorKind>;
+
+impl LexError {
+    #[must_use]
+    pub const fn new(offset: usize, kind: LexErrorKind) -> Self {
+        Spanned {
+            offset,
+            value: kind,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

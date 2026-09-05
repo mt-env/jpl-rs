@@ -1,4 +1,4 @@
-use crate::lexer::token::{IllegalByteError, LexError, Token, TokenKind};
+use crate::lexer::token::{IllegalByteError, LexError, LexErrorKind, Token, TokenKind};
 
 pub mod token;
 
@@ -174,7 +174,13 @@ fn next_token(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usiz
         return (Ok(token), next + 1);
     }
 
-    (Err(LexError::IllegalCharacter(next, *first_char)), next + 1)
+    (
+        Err(LexError::new(
+            next,
+            LexErrorKind::IllegalCharacter(*first_char),
+        )),
+        next + 1,
+    )
 }
 
 fn skip_whitespace(program: &str, start: usize) -> usize {
@@ -213,7 +219,10 @@ fn skip_block_comment(program: &str, start: usize) -> (usize, Result<(), LexErro
         }
 
         if pos + 1 >= program.len() {
-            return (pos, Err(LexError::UnterminatedComment(start)));
+            return (
+                pos,
+                Err(LexError::new(start, LexErrorKind::UnterminatedComment)),
+            );
         }
 
         pos += 2;
@@ -259,11 +268,17 @@ fn read_string_literal(program: &str, start: usize) -> (Result<Token<'_>, LexErr
             return (Ok(Token::new(TokenKind::String, start, token_str)), pos + 1);
         }
         if c == b'\n' {
-            return (Err(LexError::UnterminatedString(start)), pos);
+            return (
+                Err(LexError::new(start, LexErrorKind::UnterminatedString)),
+                pos,
+            );
         }
         pos += 1;
     }
-    (Err(LexError::UnterminatedString(start)), pos)
+    (
+        Err(LexError::new(start, LexErrorKind::UnterminatedString)),
+        pos,
+    )
 }
 
 fn read_numeric(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
