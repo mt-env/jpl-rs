@@ -1,42 +1,50 @@
-use std::fmt::Display;
+use crate::{
+    lexer::token::{IllegalByteError, LexError, LexErrorKind},
+    parser::ast::Spanned,
+};
 
-use crate::lexer::token::{IllegalByteError, LexError};
-
-pub fn print_validation_error(errors: Vec<IllegalByteError>) {
+pub fn print_validation_errors(errors: Vec<IllegalByteError>) {
     for error in errors {
-        println!("{error}");
+        print_validation_error(error);
     }
-    println!("Compilation failed: lexical analysis failed");
 }
 
-pub fn print_lex_error(errors: Vec<LexError>, program: &str) {
+fn print_validation_error(
+    Spanned {
+        offset,
+        value: error,
+    }: IllegalByteError,
+) {
+    println!(
+        "Validation error at offset {offset}: Illegal byte 0x{:02X}",
+        error
+    );
+}
+
+pub fn print_lex_errors(errors: Vec<LexError>, program: &str) {
     for error in errors {
-        println!("Lexical error: {error}");
+        print_lex_error(error, program);
     }
 }
 
-impl Display for IllegalByteError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Illegal byte 0x{:02X} at offset {}",
-            self.byte, self.offset
-        )
-    }
-}
-
-impl Display for LexError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::UnterminatedString(offset) => {
-                write!(f, "Unterminated string literal at offset {offset}")
-            }
-            Self::IllegalCharacter(offset, c) => {
-                write!(f, "Illegal character '{c}' at offset {offset}")
-            }
-            Self::UnterminatedComment(offset) => {
-                write!(f, "Unterminated comment at offset {offset}")
-            }
+fn print_lex_error(
+    Spanned {
+        offset,
+        value: error,
+    }: LexError,
+    program: &str,
+) {
+    let (line, col) = super::get_line_and_column(program, offset);
+    super::show_line_with_error(program, offset);
+    match error {
+        LexErrorKind::UnterminatedString => {
+            println!("Lex error at line {line}, column {col}: Unterminated string literal");
+        }
+        LexErrorKind::IllegalCharacter(c) => {
+            println!("Lex error at line {line}, column {col}: Illegal character '{c}'",);
+        }
+        LexErrorKind::UnterminatedComment => {
+            println!("Lex error at line {line}, column {col}: Unterminated comment");
         }
     }
 }
