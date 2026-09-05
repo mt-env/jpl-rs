@@ -81,7 +81,7 @@ pub type LexError = Spanned<LexErrorKind>;
 impl LexError {
     #[must_use]
     pub const fn new(offset: usize, kind: LexErrorKind) -> Self {
-        Spanned {
+        Self {
             offset,
             value: kind,
         }
@@ -93,7 +93,7 @@ pub type IllegalByteError = Spanned<u8>;
 impl IllegalByteError {
     #[must_use]
     pub const fn new(offset: usize, byte: u8) -> Self {
-        Spanned {
+        Self {
             offset,
             value: byte,
         }

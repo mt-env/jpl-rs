@@ -23,7 +23,7 @@ fn show_line_with_error(program: &str, pos: usize) {
     let line_start = program[..pos].rfind('\n').map_or(0, |i| i + 1);
     let line_end = program[pos..].find('\n').map_or(program.len(), |i| pos + i);
     let line_content = &program[line_start..line_end];
-    println!("{} | {}", line, line_content);
+    println!("{line} | {line_content}");
     println!(
         "{} | {}^",
         " ".repeat(line.to_string().len()),

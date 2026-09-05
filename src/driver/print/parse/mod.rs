@@ -1,8 +1,8 @@
 use crate::parser::ast::{Cmd, ExprKind, LValue, ParsedCmd, ParsedExpr, ParsedLValue};
 
-pub fn print_sexp<'src, 'ast>(ast: Vec<&ParsedCmd<'src, 'ast>>) {
+pub fn print_sexp(ast: Vec<&ParsedCmd<'_, '_>>) {
     for cmd in ast {
-        println!("{cmd}")
+        println!("{cmd}");
     }
 }
 
@@ -34,12 +34,11 @@ impl std::fmt::Display for ParsedExpr<'_, '_> {
             }
             ExprKind::Var(var) => write!(f, "(VarExpr {var})"),
             ExprKind::ArrayLiteral(arr) => {
-                let mut arr_str = String::from("(ArrayLiteralExpr");
+                write!(f, "(ArrayLiteralExpr")?;
                 for expr in arr {
-                    arr_str.push_str(&format!(" {expr}"));
+                    write!(f, " {expr}")?;
                 }
-                arr_str.push(')');
-                write!(f, "{arr_str}")
+                write!(f, ")")
             }
         }
     }

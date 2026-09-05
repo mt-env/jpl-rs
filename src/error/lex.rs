@@ -15,10 +15,7 @@ fn print_validation_error(
         value: error,
     }: IllegalByteError,
 ) {
-    println!(
-        "Validation error at offset {offset}: Illegal byte 0x{:02X}",
-        error
-    );
+    println!("Validation error at offset {offset}: Illegal byte 0x{error:02X}");
 }
 
 pub fn print_lex_errors(errors: Vec<LexError>, program: &str) {
@@ -41,7 +38,7 @@ fn print_lex_error(
             println!("Lex error at line {line}, column {col}: Unterminated string literal");
         }
         LexErrorKind::IllegalCharacter(c) => {
-            println!("Lex error at line {line}, column {col}: Illegal character '{c}'",);
+            println!("Lex error at line {line}, column {col}: Illegal character '{c}'");
         }
         LexErrorKind::UnterminatedComment => {
             println!("Lex error at line {line}, column {col}: Unterminated comment");

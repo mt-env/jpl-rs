@@ -16,7 +16,7 @@ pub fn print_parse_error(
             );
         }
         ParseErrorKind::InvalidFloatLiteral(src) => {
-            println!("Parse error at line {line}, column {column}: Invalid float literal '{src}'",);
+            println!("Parse error at line {line}, column {column}: Invalid float literal '{src}'");
         }
         ParseErrorKind::UnexpectedToken {
             expected,

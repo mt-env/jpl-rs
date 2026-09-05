@@ -50,10 +50,7 @@ impl<'src, 'ast> ParserCtx<'src, 'ast> {
     }
 
     pub(super) fn peek_is(&self, expected: TokenKind) -> bool {
-        match self.peek() {
-            Some(token) if token.kind == expected => true,
-            _ => false,
-        }
+        matches!(self.peek(), Some(token) if token.kind == expected)
     }
 
     pub(super) fn expect_many(
