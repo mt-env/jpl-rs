@@ -88,8 +88,14 @@ impl LexError {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct IllegalByteError {
-    pub offset: usize,
-    pub byte: u8,
+pub type IllegalByteError = Spanned<u8>;
+
+impl IllegalByteError {
+    #[must_use]
+    pub const fn new(offset: usize, byte: u8) -> Self {
+        Spanned {
+            offset,
+            value: byte,
+        }
+    }
 }

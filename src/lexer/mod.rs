@@ -64,10 +64,7 @@ pub fn validate_source(program: Vec<u8>) -> Result<String, Vec<IllegalByteError>
         if (*byte >= 32 && *byte <= 126) || *byte == 10 {
             continue;
         }
-        errors.push(IllegalByteError {
-            offset,
-            byte: *byte,
-        });
+        errors.push(IllegalByteError::new(offset, *byte));
     }
     if errors.is_empty() {
         unsafe { Ok(String::from_utf8(program).unwrap_unchecked()) } // safe because we just checked all bytes
