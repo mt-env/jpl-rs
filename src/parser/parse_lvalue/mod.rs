@@ -15,5 +15,23 @@ pub(super) fn parse_lvalue<'src, 'ast>(
         kind: _,
     } = ctx.expect(TokenKind::Variable)?;
 
-    Ok(ParsedLValue::new(ctx, offset, LValue::Var(str)))
+    if !ctx.peek_is(TokenKind::LSquare) {
+        return Ok(ParsedLValue::new(ctx, offset, LValue::Var(str)));
+    }
+
+    // parse array dimension bindings if necessary
+    ctx.expect(TokenKind::LSquare)?;
+    let mut vars = Vec::new();
+    if !ctx.peek_is(TokenKind::RSquare) {
+        loop {
+            let Token { str, .. } = ctx.expect(TokenKind::Variable)?;
+            vars.push(str);
+            if !ctx.peek_is(TokenKind::Comma) {
+                break;
+            }
+            ctx.expect(TokenKind::Comma)?;
+        }
+    }
+    ctx.expect(TokenKind::RSquare)?;
+    Ok(ParsedLValue::new(ctx, offset, LValue::Array(str, vars)))
 }

@@ -72,6 +72,7 @@ impl<'src, 'ast> ParsedExpr<'src, 'ast> {
 
 pub enum LValue<'src> {
     Var(&'src str),
+    Array(&'src str, Vec<&'src str>),
 }
 
 impl<'src, 'ast> ParsedLValue<'src> {
