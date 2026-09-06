@@ -4,7 +4,7 @@ use crate::{
     lexer::token::{Token, TokenKind},
     parser::{
         ast::{Cmd, ParseError, ParsedCmd},
-        parse_expr, parse_lvalue,
+        parse_binding, parse_expr, parse_lvalue, parse_stmt, parse_type,
         parser_ctx::ParserCtx,
     },
 };
@@ -24,6 +24,8 @@ pub(super) fn parse_cmd<'src, 'ast>(
         TokenKind::Print,
         TokenKind::Show,
         TokenKind::Time,
+        TokenKind::Fn,
+        TokenKind::Struct,
     ])?;
 
     let cmd_kind = match kind {
@@ -34,6 +36,8 @@ pub(super) fn parse_cmd<'src, 'ast>(
         TokenKind::Print => parse_print(ctx),
         TokenKind::Show => parse_show(ctx),
         TokenKind::Time => parse_time(ctx),
+        TokenKind::Fn => parse_fn(ctx),
+        TokenKind::Struct => parse_struct(ctx),
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
     };
     Ok(ParsedCmd::new(ctx, offset, cmd_kind?))
@@ -102,4 +106,60 @@ fn parse_time<'src, 'ast>(
 ) -> Result<Cmd<'src, 'ast, ()>, ParseError<'src>> {
     let cmd = parse_cmd(ctx)?;
     Ok(Cmd::Time(cmd))
+}
+
+fn parse_fn<'src, 'ast>(
+    ctx: &mut ParserCtx<'src, 'ast>,
+) -> Result<Cmd<'src, 'ast, ()>, ParseError<'src>> {
+    // function header
+    let Token { str: name, .. } = ctx.expect(TokenKind::Variable)?;
+    ctx.expect(TokenKind::LParen)?;
+    let mut params = Vec::new();
+    while !ctx.peek_is(TokenKind::RParen) {
+        params.push(parse_binding::parse_binding(ctx)?);
+    }
+    ctx.expect(TokenKind::RParen)?;
+    ctx.expect(TokenKind::Colon)?;
+    let return_type = parse_type::parse_type(ctx)?;
+    ctx.expect(TokenKind::LCurly)?;
+    ctx.expect(TokenKind::NewLine)?;
+
+    // statements in the function body
+    let mut body = Vec::new();
+    while !ctx.peek_is(TokenKind::RCurly) {
+        body.push(parse_stmt::parse_stmt(ctx)?);
+        ctx.expect(TokenKind::NewLine)?;
+    }
+    ctx.expect(TokenKind::RCurly)?;
+    ctx.expect(TokenKind::NewLine)?;
+    Ok(Cmd::Fn {
+        name,
+        params,
+        return_type,
+        body,
+    })
+}
+
+fn parse_struct<'src, 'ast>(
+    ctx: &mut ParserCtx<'src, 'ast>,
+) -> Result<Cmd<'src, 'ast, ()>, ParseError<'src>> {
+    // struct header
+    let Token { str: name, .. } = ctx.expect(TokenKind::Variable)?;
+    ctx.expect(TokenKind::RCurly)?;
+    ctx.expect(TokenKind::NewLine)?;
+
+    // struct fields
+    let mut fields = Vec::new();
+    while !ctx.peek_is(TokenKind::RCurly) {
+        let Token {
+            str: field_name, ..
+        } = ctx.expect(TokenKind::Variable)?;
+        ctx.expect(TokenKind::Colon)?;
+        let field_type = parse_type::parse_type(ctx)?;
+        fields.push((field_name, field_type));
+    }
+
+    ctx.expect(TokenKind::RCurly)?;
+    ctx.expect(TokenKind::NewLine)?;
+    Ok(Cmd::Struct { name, fields })
 }

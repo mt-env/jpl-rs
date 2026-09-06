@@ -19,6 +19,16 @@ pub enum Cmd<'src, 'ast, A> {
     Print(&'src str),
     Show(&'ast Spanned<Expr<'src, 'ast, A>>),
     Time(&'ast Spanned<Self>),
+    Fn {
+        name: &'src str,
+        params: Vec<&'ast Spanned<Binding<'src, 'ast>>>,
+        return_type: &'ast Spanned<Type<'src, 'ast>>,
+        body: Vec<&'ast Spanned<Stmt<'src, 'ast, A>>>,
+    },
+    Struct {
+        name: &'src str,
+        fields: Vec<(&'src str, &'ast Spanned<Type<'src, 'ast>>)>,
+    },
 }
 
 impl<'src, 'ast> ParsedCmd<'src, 'ast> {
