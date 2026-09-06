@@ -9,6 +9,7 @@ use crate::{
 };
 
 pub mod ast;
+mod parse_binding;
 mod parse_cmd;
 mod parse_expr;
 mod parse_lvalue;
