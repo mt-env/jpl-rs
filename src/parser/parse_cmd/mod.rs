@@ -145,7 +145,7 @@ fn parse_struct<'src, 'ast>(
 ) -> Result<Cmd<'src, 'ast, ()>, ParseError<'src>> {
     // struct header
     let Token { str: name, .. } = ctx.expect(TokenKind::Variable)?;
-    ctx.expect(TokenKind::RCurly)?;
+    ctx.expect(TokenKind::LCurly)?;
     ctx.expect(TokenKind::NewLine)?;
 
     // struct fields
@@ -156,6 +156,7 @@ fn parse_struct<'src, 'ast>(
         } = ctx.expect(TokenKind::Variable)?;
         ctx.expect(TokenKind::Colon)?;
         let field_type = parse_type::parse_type(ctx)?;
+        ctx.expect(TokenKind::NewLine)?;
         fields.push((field_name, field_type));
     }
 
