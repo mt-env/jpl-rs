@@ -22,18 +22,8 @@ pub(super) fn parse_expr<'src, 'ast>(
     let kind = match kind {
         TokenKind::True => ExprKind::Bool(true),
         TokenKind::False => ExprKind::Bool(false),
-        TokenKind::FloatVal => parse_numeric(
-            str,
-            offset,
-            ExprKind::Float,
-            ParseErrorKind::InvalidFloatLiteral,
-        )?,
-        TokenKind::IntVal => parse_numeric(
-            str,
-            offset,
-            ExprKind::Int,
-            ParseErrorKind::InvalidIntLiteral,
-        )?,
+        TokenKind::FloatVal => parse_float(str, offset)?,
+        TokenKind::IntVal => parse_int(str, offset)?,
         TokenKind::Variable => ExprKind::Var(str),
         TokenKind::LSquare => parse_array_literal(ctx)?,
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
@@ -42,19 +32,30 @@ pub(super) fn parse_expr<'src, 'ast>(
     Ok(ParsedExpr::new(ctx, offset, kind))
 }
 
-fn parse_numeric<'src, 'ast, T>(
-    str: &'src str,
-    offset: usize,
-    kind: impl Fn(T) -> ExprKind<'src, 'ast, ()>,
-    error: impl Fn(&'src str) -> ParseErrorKind,
-) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>>
-where
-    T: std::str::FromStr,
-{
-    let Ok(parsed_numeric) = str.parse::<T>() else {
-        return Err(ParseError::new(offset, error(str)));
+fn parse_int<'ast>(str: &str, offset: usize) -> Result<ExprKind<'_, 'ast, ()>, ParseError<'_>> {
+    let Ok(parsed_int) = str.parse::<i64>() else {
+        return Err(ParseError::new(
+            offset,
+            ParseErrorKind::InvalidIntLiteral(str),
+        ));
     };
-    Ok(kind(parsed_numeric))
+    Ok(ExprKind::Int(parsed_int))
+}
+
+fn parse_float<'ast>(str: &str, offset: usize) -> Result<ExprKind<'_, 'ast, ()>, ParseError<'_>> {
+    let Ok(parsed_float) = str.parse::<f64>() else {
+        return Err(ParseError::new(
+            offset,
+            ParseErrorKind::InvalidFloatLiteral(str),
+        ));
+    };
+    if !parsed_float.is_finite() {
+        return Err(ParseError::new(
+            offset,
+            ParseErrorKind::InvalidFloatLiteral(str),
+        ));
+    }
+    Ok(ExprKind::Float(parsed_float))
 }
 
 fn parse_array_literal<'src, 'ast>(
