@@ -1,4 +1,4 @@
-use crate::{lexer::token::TokenKind, parser::ParserCtx};
+use crate::{Spanned, lexer::token::TokenKind, parser::ParserCtx};
 
 pub type ParsedProgram<'src, 'ast> = Vec<&'ast ParsedCmd<'src, 'ast>>;
 pub type ParsedCmd<'src, 'ast> = Spanned<Cmd<'src, 'ast, ()>>;
@@ -72,11 +72,6 @@ impl<'src, 'ast> ParsedLValue<'src> {
             value: lvalue,
         })
     }
-}
-
-pub struct Spanned<T> {
-    pub offset: usize,
-    pub value: T,
 }
 
 pub enum ParseErrorKind<'src> {

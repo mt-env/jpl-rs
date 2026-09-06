@@ -1,4 +1,7 @@
-use crate::parser::ast::{ParseError, ParseErrorKind, Spanned};
+use crate::{
+    Spanned,
+    parser::ast::{ParseError, ParseErrorKind},
+};
 
 pub fn print_parse_error(
     Spanned {

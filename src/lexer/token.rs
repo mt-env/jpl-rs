@@ -1,4 +1,4 @@
-use crate::parser::ast::Spanned;
+use crate::Spanned;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Token<'a> {

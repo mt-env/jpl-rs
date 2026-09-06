@@ -1,6 +1,6 @@
 use crate::{
+    Spanned,
     lexer::token::{IllegalByteError, LexError, LexErrorKind},
-    parser::ast::Spanned,
 };
 
 pub fn print_validation_errors(errors: Vec<IllegalByteError>) {
