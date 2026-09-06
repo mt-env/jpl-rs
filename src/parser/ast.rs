@@ -5,6 +5,7 @@ pub type ParsedCmd<'src, 'ast> = Spanned<Cmd<'src, 'ast, ()>>;
 pub type ParsedExpr<'src, 'ast> = Spanned<Expr<'src, 'ast, ()>>;
 pub type ParsedLValue<'src> = Spanned<LValue<'src>>;
 pub type ParsedType<'src, 'ast> = Spanned<Type<'src, 'ast>>;
+pub type ParsedStmt<'src, 'ast> = Spanned<Stmt<'src, 'ast, ()>>;
 
 pub enum Cmd<'src, 'ast, A> {
     Read(&'src str, &'ast Spanned<LValue<'src>>),
@@ -96,6 +97,28 @@ impl<'src, 'ast> ParsedType<'src, 'ast> {
         ty: Type<'src, 'ast>,
     ) -> &'ast Self {
         ctx.alloc(Spanned { offset, value: ty })
+    }
+}
+
+pub enum Stmt<'src, 'ast, A> {
+    Let(
+        &'ast Spanned<LValue<'src>>,
+        &'ast Spanned<Expr<'src, 'ast, A>>,
+    ),
+    Assert(&'ast Spanned<Expr<'src, 'ast, A>>, &'src str),
+    Return(&'ast Spanned<Expr<'src, 'ast, A>>),
+}
+
+impl<'src, 'ast> ParsedStmt<'src, 'ast> {
+    pub(super) fn new(
+        ctx: &ParserCtx<'src, 'ast>,
+        offset: usize,
+        stmt: Stmt<'src, 'ast, ()>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned {
+            offset,
+            value: stmt,
+        })
     }
 }
 

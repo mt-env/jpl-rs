@@ -12,6 +12,7 @@ pub mod ast;
 mod parse_cmd;
 mod parse_expr;
 mod parse_lvalue;
+mod parse_stmt;
 mod parse_type;
 mod parser_ctx;
 
