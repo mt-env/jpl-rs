@@ -4,6 +4,7 @@ pub type ParsedProgram<'src, 'ast> = Vec<&'ast ParsedCmd<'src, 'ast>>;
 pub type ParsedCmd<'src, 'ast> = Spanned<Cmd<'src, 'ast, ()>>;
 pub type ParsedExpr<'src, 'ast> = Spanned<Expr<'src, 'ast, ()>>;
 pub type ParsedLValue<'src> = Spanned<LValue<'src>>;
+pub type ParsedType<'src, 'ast> = Spanned<Type<'src, 'ast>>;
 
 pub enum Cmd<'src, 'ast, A> {
     Read(&'src str, &'ast Spanned<LValue<'src>>),
@@ -71,6 +72,30 @@ impl<'src, 'ast> ParsedLValue<'src> {
             offset,
             value: lvalue,
         })
+    }
+}
+
+pub enum Type<'src, 'ast> {
+    Int,
+    Float,
+    Bool,
+    Array {
+        element_type: &'ast Spanned<Self>,
+        dimension: usize,
+    },
+    Struct {
+        name: &'src str,
+    },
+    Void,
+}
+
+impl<'src, 'ast> ParsedType<'src, 'ast> {
+    pub(super) fn new(
+        ctx: &ParserCtx<'src, 'ast>,
+        offset: usize,
+        ty: Type<'src, 'ast>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned { offset, value: ty })
     }
 }
 
