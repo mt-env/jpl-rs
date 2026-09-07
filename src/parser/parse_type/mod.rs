@@ -28,12 +28,22 @@ pub(super) fn parse_type<'src, 'ast>(
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
     };
 
-    let ty = ParsedType::new(ctx, offset, ty_kind);
-    if !ctx.peek_is(TokenKind::LSquare) {
-        return Ok(ty);
+    let mut ty = ParsedType::new(ctx, offset, ty_kind);
+    loop {
+        if ctx.peek_is(TokenKind::LSquare) {
+            ty = parse_array_type(ctx, offset, ty)?;
+            continue;
+        }
+        break;
     }
+    Ok(ty)
+}
 
-    // parse array dimensionality if necessary
+fn parse_array_type<'src, 'ast>(
+    ctx: &mut ParserCtx<'src, 'ast>,
+    offset: usize,
+    element_type: &'ast ParsedType<'src, 'ast>,
+) -> Result<&'ast ParsedType<'src, 'ast>, ParseError<'src>> {
     ctx.expect(TokenKind::LSquare)?;
     let mut dimension = 1;
     while !ctx.peek_is(TokenKind::RSquare) {
@@ -45,7 +55,7 @@ pub(super) fn parse_type<'src, 'ast>(
         ctx,
         offset,
         Type::Array {
-            element_type: ty,
+            element_type,
             dimension,
         },
     ))
