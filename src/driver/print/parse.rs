@@ -1,6 +1,5 @@
 use crate::parser::ast::{
-    Cmd, ExprKind, LValue, ParsedBinding, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt,
-    ParsedType, Stmt, Type,
+    Cmd, ExprKind, LValue, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt, ParsedType, Stmt, Type,
 };
 
 pub fn print_sexp(ast: Vec<&ParsedCmd<'_, '_>>) {
@@ -25,14 +24,14 @@ impl std::fmt::Display for ParsedCmd<'_, '_> {
                 return_type,
                 body,
             } => {
-                write!(f, "(FnCmd {name} (")?;
+                write!(f, "(FnCmd {name} ((")?;
                 for (i, param) in params.iter().enumerate() {
                     if i > 0 {
                         write!(f, " ")?;
                     }
-                    write!(f, "{param}")?;
+                    write!(f, "{} {}", param.value.lvalue, param.value.ty)?;
                 }
-                write!(f, ") {return_type}")?;
+                write!(f, ")) {return_type}")?;
                 for stmt in body {
                     write!(f, " {stmt}")?;
                 }
@@ -124,12 +123,6 @@ impl std::fmt::Display for ParsedType<'_, '_> {
             } => write!(f, "(ArrayType {element_type} {dimension})"),
             Type::Struct { name } => write!(f, "(StructType {name})"),
         }
-    }
-}
-
-impl std::fmt::Display for ParsedBinding<'_, '_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({} {})", self.value.lvalue, self.value.ty)
     }
 }
 
