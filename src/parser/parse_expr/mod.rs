@@ -19,6 +19,7 @@ pub(super) fn parse_expr<'src, 'ast>(
         TokenKind::Variable,
         TokenKind::LSquare,
         TokenKind::Void,
+        TokenKind::LParen,
     ])?;
     let kind = match kind {
         TokenKind::True => ExprKind::Bool(true),
@@ -68,6 +69,11 @@ pub(super) fn parse_expr<'src, 'ast>(
         }
         TokenKind::Void => ExprKind::Void,
         TokenKind::LSquare => parse_array_literal(ctx)?,
+        TokenKind::LParen => {
+            let expr = parse_expr(ctx)?;
+            ctx.expect(TokenKind::RParen)?;
+            return Ok(expr);
+        }
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
     };
 
