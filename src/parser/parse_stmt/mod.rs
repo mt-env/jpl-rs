@@ -40,7 +40,7 @@ fn parse_assert<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
 ) -> Result<Stmt<'src, 'ast, ()>, ParseError<'src>> {
     let expr = parse_expr::parse_expr(ctx)?;
-    ctx.expect(TokenKind::Colon)?;
+    ctx.expect(TokenKind::Comma)?;
     let Token { str, .. } = ctx.expect(TokenKind::String)?;
     Ok(Stmt::Assert(expr, str))
 }
