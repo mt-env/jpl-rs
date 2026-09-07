@@ -62,10 +62,33 @@ impl std::fmt::Display for ParsedExpr<'_, '_> {
                 }
             }
             ExprKind::Var(var) => write!(f, "(VarExpr {var})"),
+            ExprKind::Void => write!(f, "(VoidExpr)"),
             ExprKind::ArrayLiteral(arr) => {
                 write!(f, "(ArrayLiteralExpr")?;
                 for expr in arr {
                     write!(f, " {expr}")?;
+                }
+                write!(f, ")")
+            }
+            ExprKind::StructLiteral(name, fields) => {
+                write!(f, "(StructLiteralExpr {name}")?;
+                for field in fields {
+                    write!(f, " {field}")?;
+                }
+                write!(f, ")")
+            }
+            ExprKind::Dot(expr, field) => write!(f, "(DotExpr {expr} {field})"),
+            ExprKind::ArrayIndex(expr, indices) => {
+                write!(f, "(ArrayIndexExpr {expr}")?;
+                for index in indices.iter() {
+                    write!(f, " {index}")?;
+                }
+                write!(f, ")")
+            }
+            ExprKind::Call(name, args) => {
+                write!(f, "(CallExpr {name}")?;
+                for arg in args {
+                    write!(f, " {arg}")?;
                 }
                 write!(f, ")")
             }
