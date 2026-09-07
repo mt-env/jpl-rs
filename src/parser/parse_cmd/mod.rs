@@ -115,8 +115,14 @@ fn parse_fn<'src, 'ast>(
     let Token { str: name, .. } = ctx.expect(TokenKind::Variable)?;
     ctx.expect(TokenKind::LParen)?;
     let mut params = Vec::new();
-    while !ctx.peek_is(TokenKind::RParen) {
-        params.push(parse_binding::parse_binding(ctx)?);
+    if !ctx.peek_is(TokenKind::RParen) {
+        loop {
+            params.push(parse_binding::parse_binding(ctx)?);
+            if !ctx.peek_is(TokenKind::Comma) {
+                break;
+            }
+            ctx.expect(TokenKind::Comma)?;
+        }
     }
     ctx.expect(TokenKind::RParen)?;
     ctx.expect(TokenKind::Colon)?;
