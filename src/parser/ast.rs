@@ -65,10 +65,14 @@ pub enum ExprKind<'src, 'ast, A> {
         then_b: &'ast Spanned<Expr<'src, 'ast, A>>,
         else_b: &'ast Spanned<Expr<'src, 'ast, A>>,
     },
-    ArrayLoop {
-        bindings: Vec<(&'src str, &'ast Spanned<Expr<'src, 'ast, A>>)>,
-        body: &'ast Spanned<Expr<'src, 'ast, A>>,
-    },
+    ArrayLoop(
+        Vec<(&'src str, &'ast Spanned<Expr<'src, 'ast, A>>)>,
+        &'ast Spanned<Expr<'src, 'ast, A>>,
+    ),
+    SumLoop(
+        Vec<(&'src str, &'ast Spanned<Expr<'src, 'ast, A>>)>,
+        &'ast Spanned<Expr<'src, 'ast, A>>,
+    ),
 }
 
 impl<'src, 'ast> ParsedExpr<'src, 'ast> {

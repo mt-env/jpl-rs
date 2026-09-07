@@ -23,6 +23,7 @@ pub(super) fn parse_primary<'src, 'ast>(
         TokenKind::LParen,
         TokenKind::If,
         TokenKind::Array,
+        TokenKind::Sum,
     ])?;
     let mut expr = match kind {
         TokenKind::True => ParsedExpr::new(ctx, offset, ExprKind::Bool(true)),
@@ -49,7 +50,8 @@ pub(super) fn parse_primary<'src, 'ast>(
             expr
         }
         TokenKind::If => parse_if(ctx, offset)?,
-        TokenKind::Array => parse_array_loop(ctx, offset)?,
+        TokenKind::Array => parse_loop_expr(ctx, offset, ExprKind::ArrayLoop)?,
+        TokenKind::Sum => parse_loop_expr(ctx, offset, ExprKind::SumLoop)?,
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
     };
 
@@ -220,9 +222,13 @@ fn parse_if<'src, 'ast>(
     Ok(ParsedExpr::new(ctx, offset, if_expr))
 }
 
-fn parse_array_loop<'src, 'ast>(
+fn parse_loop_expr<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
     offset: usize,
+    constructor: impl Fn(
+        Vec<(&'src str, &'ast ParsedExpr<'src, 'ast>)>,
+        &'ast ParsedExpr<'src, 'ast>,
+    ) -> ExprKind<'src, 'ast, ()>,
 ) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
     ctx.expect(TokenKind::LSquare)?;
     let mut bindings = Vec::new();
@@ -240,9 +246,5 @@ fn parse_array_loop<'src, 'ast>(
     }
     ctx.expect(TokenKind::RSquare)?;
     let body = parse_expr(ctx)?;
-    Ok(ParsedExpr::new(
-        ctx,
-        offset,
-        ExprKind::ArrayLoop { bindings, body },
-    ))
+    Ok(ParsedExpr::new(ctx, offset, constructor(bindings, body)))
 }
