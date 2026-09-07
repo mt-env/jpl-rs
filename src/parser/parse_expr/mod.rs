@@ -29,43 +29,14 @@ pub(super) fn parse_expr<'src, 'ast>(
         TokenKind::Variable => {
             // parse struct literal expr
             if ctx.peek_is(TokenKind::LCurly) {
-                ctx.expect(TokenKind::LCurly)?;
-                let mut fields = Vec::new();
-                if !ctx.peek_is(TokenKind::RCurly) {
-                    loop {
-                        fields.push(parse_expr(ctx)?);
-                        if !ctx.peek_is(TokenKind::Comma) {
-                            break;
-                        }
-                        ctx.expect(TokenKind::Comma)?;
-                    }
-                }
-                ctx.expect(TokenKind::RCurly)?;
-                return Ok(ParsedExpr::new(
-                    ctx,
-                    offset,
-                    ExprKind::StructLiteral(str, fields),
-                ));
+                parse_struct_literal(ctx, str)?
             }
-
             // parse call expr
-            if ctx.peek_is(TokenKind::LParen) {
-                ctx.expect(TokenKind::LParen)?;
-                let mut args = Vec::new();
-                if !ctx.peek_is(TokenKind::RParen) {
-                    loop {
-                        args.push(parse_expr(ctx)?);
-                        if !ctx.peek_is(TokenKind::Comma) {
-                            break;
-                        }
-                        ctx.expect(TokenKind::Comma)?;
-                    }
-                }
-                ctx.expect(TokenKind::RParen)?;
-                return Ok(ParsedExpr::new(ctx, offset, ExprKind::Call(str, args)));
+            else if ctx.peek_is(TokenKind::LParen) {
+                parse_call(ctx, str)?
+            } else {
+                ExprKind::Var(str)
             }
-
-            ExprKind::Var(str)
         }
         TokenKind::Void => ExprKind::Void,
         TokenKind::LSquare => parse_array_literal(ctx)?,
@@ -169,4 +140,46 @@ fn parse_array_index<'src, 'ast>(
     ctx.expect(TokenKind::RSquare)?;
     let array_index_expr = ExprKind::ArrayIndex(inner, ctx.alloc(indices));
     Ok(ParsedExpr::new(ctx, inner.offset, array_index_expr))
+}
+
+fn parse_struct_literal<'src, 'ast>(
+    ctx: &mut ParserCtx<'src, 'ast>,
+    struct_name: &'src str,
+) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
+    ctx.expect(TokenKind::LCurly)?;
+    let mut fields = Vec::new();
+    if !ctx.peek_is(TokenKind::RCurly) {
+        loop {
+            let field_expr = parse_expr(ctx)?;
+            fields.push(field_expr);
+            if !ctx.peek_is(TokenKind::Comma) {
+                break;
+            }
+            ctx.expect(TokenKind::Comma)?;
+        }
+    }
+    ctx.expect(TokenKind::RCurly)?;
+    let struct_literal_expr = ExprKind::StructLiteral(struct_name, fields);
+    Ok(struct_literal_expr)
+}
+
+fn parse_call<'src, 'ast>(
+    ctx: &mut ParserCtx<'src, 'ast>,
+    func_name: &'src str,
+) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
+    ctx.expect(TokenKind::LParen)?;
+    let mut args = Vec::new();
+    if !ctx.peek_is(TokenKind::RParen) {
+        loop {
+            let arg_expr = parse_expr(ctx)?;
+            args.push(arg_expr);
+            if !ctx.peek_is(TokenKind::Comma) {
+                break;
+            }
+            ctx.expect(TokenKind::Comma)?;
+        }
+    }
+    ctx.expect(TokenKind::RParen)?;
+    let call_expr = ExprKind::Call(func_name, args);
+    Ok(call_expr)
 }
