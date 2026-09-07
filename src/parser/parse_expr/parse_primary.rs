@@ -21,6 +21,7 @@ pub(super) fn parse_primary<'src, 'ast>(
         TokenKind::LSquare,
         TokenKind::Void,
         TokenKind::LParen,
+        TokenKind::If,
     ])?;
     let mut expr = match kind {
         TokenKind::True => ParsedExpr::new(ctx, offset, ExprKind::Bool(true)),
@@ -46,6 +47,7 @@ pub(super) fn parse_primary<'src, 'ast>(
             ctx.expect(TokenKind::RParen)?;
             expr
         }
+        TokenKind::If => parse_if(ctx, offset)?,
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
     };
 
@@ -197,4 +199,22 @@ fn parse_call<'src, 'ast>(
     ctx.expect(TokenKind::RParen)?;
     let call_expr = ExprKind::Call(func_name, args);
     Ok(ParsedExpr::new(ctx, offset, call_expr))
+}
+
+fn parse_if<'src, 'ast>(
+    ctx: &mut ParserCtx<'src, 'ast>,
+    offset: usize,
+) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
+    ctx.expect(TokenKind::If)?;
+    let condition_expr = parse_expr(ctx)?;
+    ctx.expect(TokenKind::Then)?;
+    let then_expr = parse_expr(ctx)?;
+    ctx.expect(TokenKind::Else)?;
+    let else_expr = parse_expr(ctx)?;
+    let if_expr = ExprKind::If {
+        cond: condition_expr,
+        then_b: then_expr,
+        else_b: else_expr,
+    };
+    Ok(ParsedExpr::new(ctx, offset, if_expr))
 }

@@ -60,6 +60,11 @@ pub enum ExprKind<'src, 'ast, A> {
         &'ast Vec<&'ast Spanned<Expr<'src, 'ast, A>>>,
     ),
     Call(&'src str, Vec<&'ast Spanned<Expr<'src, 'ast, A>>>),
+    If {
+        cond: &'ast Spanned<Expr<'src, 'ast, A>>,
+        then_b: &'ast Spanned<Expr<'src, 'ast, A>>,
+        else_b: &'ast Spanned<Expr<'src, 'ast, A>>,
+    },
 }
 
 impl<'src, 'ast> ParsedExpr<'src, 'ast> {
