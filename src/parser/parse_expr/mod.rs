@@ -21,34 +21,33 @@ pub(super) fn parse_expr<'src, 'ast>(
         TokenKind::Void,
         TokenKind::LParen,
     ])?;
-    let kind = match kind {
-        TokenKind::True => ExprKind::Bool(true),
-        TokenKind::False => ExprKind::Bool(false),
-        TokenKind::FloatVal => parse_float(str, offset)?,
-        TokenKind::IntVal => parse_int(str, offset)?,
+    let mut expr = match kind {
+        TokenKind::True => ParsedExpr::new(ctx, offset, ExprKind::Bool(true)),
+        TokenKind::False => ParsedExpr::new(ctx, offset, ExprKind::Bool(false)),
+        TokenKind::FloatVal => parse_float(ctx, str, offset)?,
+        TokenKind::IntVal => parse_int(ctx, str, offset)?,
         TokenKind::Variable => {
             // parse struct literal expr
             if ctx.peek_is(TokenKind::LCurly) {
-                parse_struct_literal(ctx, str)?
+                parse_struct_literal(ctx, offset, str)?
             }
             // parse call expr
             else if ctx.peek_is(TokenKind::LParen) {
-                parse_call(ctx, str)?
+                parse_call(ctx, offset, str)?
             } else {
-                ExprKind::Var(str)
+                ParsedExpr::new(ctx, offset, ExprKind::Var(str))
             }
         }
-        TokenKind::Void => ExprKind::Void,
-        TokenKind::LSquare => parse_array_literal(ctx)?,
+        TokenKind::Void => ParsedExpr::new(ctx, offset, ExprKind::Void),
+        TokenKind::LSquare => parse_array_literal(ctx, offset)?,
         TokenKind::LParen => {
             let expr = parse_expr(ctx)?;
             ctx.expect(TokenKind::RParen)?;
-            return Ok(expr);
+            expr
         }
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
     };
 
-    let mut expr = ParsedExpr::new(ctx, offset, kind);
     loop {
         // parse dot expr
         if ctx.peek_is(TokenKind::Dot) {
@@ -65,17 +64,25 @@ pub(super) fn parse_expr<'src, 'ast>(
     Ok(expr)
 }
 
-fn parse_int<'ast>(str: &str, offset: usize) -> Result<ExprKind<'_, 'ast, ()>, ParseError<'_>> {
+fn parse_int<'src, 'ast>(
+    ctx: &ParserCtx<'src, 'ast>,
+    str: &'src str,
+    offset: usize,
+) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
     let Ok(parsed_int) = str.parse::<i64>() else {
         return Err(ParseError::new(
             offset,
             ParseErrorKind::InvalidIntLiteral(str),
         ));
     };
-    Ok(ExprKind::Int(parsed_int))
+    Ok(ParsedExpr::new(ctx, offset, ExprKind::Int(parsed_int)))
 }
 
-fn parse_float<'ast>(str: &str, offset: usize) -> Result<ExprKind<'_, 'ast, ()>, ParseError<'_>> {
+fn parse_float<'src, 'ast>(
+    ctx: &ParserCtx<'src, 'ast>,
+    str: &'src str,
+    offset: usize,
+) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
     let Ok(parsed_float) = str.parse::<f64>() else {
         return Err(ParseError::new(
             offset,
@@ -88,12 +95,13 @@ fn parse_float<'ast>(str: &str, offset: usize) -> Result<ExprKind<'_, 'ast, ()>,
             ParseErrorKind::InvalidFloatLiteral(str),
         ));
     }
-    Ok(ExprKind::Float(parsed_float))
+    Ok(ParsedExpr::new(ctx, offset, ExprKind::Float(parsed_float)))
 }
 
 fn parse_array_literal<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
-) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
+    offset: usize,
+) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
     let mut elements = Vec::new();
     loop {
         if ctx.peek_is(TokenKind::RSquare) {
@@ -108,7 +116,11 @@ fn parse_array_literal<'src, 'ast>(
         }
     }
     ctx.expect(TokenKind::RSquare)?;
-    Ok(ExprKind::ArrayLiteral(elements))
+    Ok(ParsedExpr::new(
+        ctx,
+        offset,
+        ExprKind::ArrayLiteral(elements),
+    ))
 }
 
 fn parse_dot<'src, 'ast>(
@@ -144,8 +156,9 @@ fn parse_array_index<'src, 'ast>(
 
 fn parse_struct_literal<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
+    offset: usize,
     struct_name: &'src str,
-) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
+) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
     ctx.expect(TokenKind::LCurly)?;
     let mut fields = Vec::new();
     if !ctx.peek_is(TokenKind::RCurly) {
@@ -160,13 +173,14 @@ fn parse_struct_literal<'src, 'ast>(
     }
     ctx.expect(TokenKind::RCurly)?;
     let struct_literal_expr = ExprKind::StructLiteral(struct_name, fields);
-    Ok(struct_literal_expr)
+    Ok(ParsedExpr::new(ctx, offset, struct_literal_expr))
 }
 
 fn parse_call<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
+    offset: usize,
     func_name: &'src str,
-) -> Result<ExprKind<'src, 'ast, ()>, ParseError<'src>> {
+) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
     ctx.expect(TokenKind::LParen)?;
     let mut args = Vec::new();
     if !ctx.peek_is(TokenKind::RParen) {
@@ -181,5 +195,5 @@ fn parse_call<'src, 'ast>(
     }
     ctx.expect(TokenKind::RParen)?;
     let call_expr = ExprKind::Call(func_name, args);
-    Ok(call_expr)
+    Ok(ParsedExpr::new(ctx, offset, call_expr))
 }
