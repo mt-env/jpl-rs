@@ -51,7 +51,15 @@ pub enum ExprKind<'src, 'ast, A> {
     Float(f64),
     Bool(bool),
     Var(&'src str),
+    Void,
     ArrayLiteral(Vec<&'ast Spanned<Expr<'src, 'ast, A>>>),
+    StructLiteral(&'src str, Vec<&'ast Spanned<Expr<'src, 'ast, A>>>),
+    Dot(&'ast Spanned<Expr<'src, 'ast, A>>, &'src str),
+    ArrayIndex(
+        &'ast Spanned<Expr<'src, 'ast, A>>,
+        &'ast Vec<Spanned<Expr<'src, 'ast, A>>>,
+    ),
+    Call(&'src str, Vec<&'ast Spanned<Expr<'src, 'ast, A>>>),
 }
 
 impl<'src, 'ast> ParsedExpr<'src, 'ast> {
