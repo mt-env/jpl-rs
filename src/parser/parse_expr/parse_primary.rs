@@ -22,6 +22,7 @@ pub(super) fn parse_primary<'src, 'ast>(
         TokenKind::Void,
         TokenKind::LParen,
         TokenKind::If,
+        TokenKind::Array,
     ])?;
     let mut expr = match kind {
         TokenKind::True => ParsedExpr::new(ctx, offset, ExprKind::Bool(true)),
@@ -48,6 +49,7 @@ pub(super) fn parse_primary<'src, 'ast>(
             expr
         }
         TokenKind::If => parse_if(ctx, offset)?,
+        TokenKind::Array => parse_array_loop(ctx, offset)?,
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
     };
 
@@ -205,7 +207,6 @@ fn parse_if<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
     offset: usize,
 ) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
-    ctx.expect(TokenKind::If)?;
     let condition_expr = parse_expr(ctx)?;
     ctx.expect(TokenKind::Then)?;
     let then_expr = parse_expr(ctx)?;
@@ -217,4 +218,31 @@ fn parse_if<'src, 'ast>(
         else_b: else_expr,
     };
     Ok(ParsedExpr::new(ctx, offset, if_expr))
+}
+
+fn parse_array_loop<'src, 'ast>(
+    ctx: &mut ParserCtx<'src, 'ast>,
+    offset: usize,
+) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
+    ctx.expect(TokenKind::LSquare)?;
+    let mut bindings = Vec::new();
+    if !ctx.peek_is(TokenKind::RSquare) {
+        loop {
+            let Token { str: var_name, .. } = ctx.expect(TokenKind::Variable)?;
+            ctx.expect(TokenKind::Colon)?;
+            let expr = parse_expr(ctx)?;
+            bindings.push((var_name, expr));
+            if !ctx.peek_is(TokenKind::Comma) {
+                break;
+            }
+            ctx.expect(TokenKind::Comma)?;
+        }
+    }
+    ctx.expect(TokenKind::RSquare)?;
+    let body = parse_expr(ctx)?;
+    Ok(ParsedExpr::new(
+        ctx,
+        offset,
+        ExprKind::ArrayLoop { bindings, body },
+    ))
 }
