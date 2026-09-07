@@ -57,7 +57,7 @@ pub enum ExprKind<'src, 'ast, A> {
     Dot(&'ast Spanned<Expr<'src, 'ast, A>>, &'src str),
     ArrayIndex(
         &'ast Spanned<Expr<'src, 'ast, A>>,
-        &'ast Vec<Spanned<Expr<'src, 'ast, A>>>,
+        &'ast Vec<&'ast Spanned<Expr<'src, 'ast, A>>>,
     ),
     Call(&'src str, Vec<&'ast Spanned<Expr<'src, 'ast, A>>>),
 }

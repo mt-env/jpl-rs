@@ -18,6 +18,7 @@ pub(super) fn parse_expr<'src, 'ast>(
         TokenKind::IntVal,
         TokenKind::Variable,
         TokenKind::LSquare,
+        TokenKind::Void,
     ])?;
     let kind = match kind {
         TokenKind::True => ExprKind::Bool(true),
@@ -25,11 +26,41 @@ pub(super) fn parse_expr<'src, 'ast>(
         TokenKind::FloatVal => parse_float(str, offset)?,
         TokenKind::IntVal => parse_int(str, offset)?,
         TokenKind::Variable => ExprKind::Var(str),
+        TokenKind::Void => ExprKind::Void,
         TokenKind::LSquare => parse_array_literal(ctx)?,
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
     };
 
-    Ok(ParsedExpr::new(ctx, offset, kind))
+    let expr = ParsedExpr::new(ctx, offset, kind);
+
+    // parse dot expr
+    if ctx.peek_is(TokenKind::Dot) {
+        ctx.expect(TokenKind::Dot)?;
+        let Token { str, .. } = ctx.expect(TokenKind::Variable)?;
+        let dot_expr = ExprKind::Dot(expr, str);
+        return Ok(ParsedExpr::new(ctx, offset, dot_expr));
+    }
+
+    // parse array index expr
+    if ctx.peek_is(TokenKind::LSquare) {
+        ctx.expect(TokenKind::LSquare)?;
+        let mut indices = Vec::new();
+        if !ctx.peek_is(TokenKind::RSquare) {
+            loop {
+                let index_expr = parse_expr(ctx)?;
+                indices.push(index_expr);
+                if !ctx.peek_is(TokenKind::Comma) {
+                    break;
+                }
+                ctx.expect(TokenKind::Comma)?;
+            }
+        }
+        ctx.expect(TokenKind::RSquare)?;
+        let array_index_expr = ExprKind::ArrayIndex(expr, ctx.alloc(indices));
+        return Ok(ParsedExpr::new(ctx, offset, array_index_expr));
+    }
+
+    Ok(expr)
 }
 
 fn parse_int<'ast>(str: &str, offset: usize) -> Result<ExprKind<'_, 'ast, ()>, ParseError<'_>> {
