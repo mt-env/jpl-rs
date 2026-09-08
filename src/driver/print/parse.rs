@@ -1,5 +1,6 @@
 use crate::parser::ast::{
-    Cmd, ExprKind, LValue, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt, ParsedType, Stmt, Type,
+    BinaryOperator, Cmd, ExprKind, LValue, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt,
+    ParsedType, Stmt, Type, UnaryOperator,
 };
 
 pub fn print_sexp(ast: Vec<&ParsedCmd<'_, '_>>) {
@@ -91,6 +92,23 @@ impl std::fmt::Display for ParsedExpr<'_, '_> {
                 }
                 write!(f, ")")
             }
+            ExprKind::If(cond, then_b, else_b) => write!(f, "(IfExpr {cond} {then_b} {else_b})"),
+            ExprKind::ArrayLoop(loop_vars, body) => {
+                write!(f, "(ArrayLoopExpr")?;
+                for (var, range) in loop_vars {
+                    write!(f, " {var} {range}")?;
+                }
+                write!(f, " {body})")
+            }
+            ExprKind::SumLoop(loop_vars, body) => {
+                write!(f, "(SumLoopExpr")?;
+                for (var, range) in loop_vars {
+                    write!(f, " {var} {range}")?;
+                }
+                write!(f, " {body})")
+            }
+            ExprKind::UnOp(op, expr) => write!(f, "(UnopExpr {op} {expr})"),
+            ExprKind::BinOp(left, op, right) => write!(f, "(BinopExpr {left} {op} {right})"),
         }
     }
 }
@@ -132,6 +150,35 @@ impl std::fmt::Display for ParsedStmt<'_, '_> {
             Stmt::Let(lvalue, expr) => write!(f, "(LetStmt {lvalue} {expr})"),
             Stmt::Assert(expr, str) => write!(f, "(AssertStmt {expr} {str})"),
             Stmt::Return(expr) => write!(f, "(ReturnStmt {expr})"),
+        }
+    }
+}
+
+impl std::fmt::Display for UnaryOperator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UnaryOperator::Not => write!(f, "!"),
+            UnaryOperator::Neg => write!(f, "-"),
+        }
+    }
+}
+
+impl std::fmt::Display for BinaryOperator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BinaryOperator::Add => write!(f, "+"),
+            BinaryOperator::Subtract => write!(f, "-"),
+            BinaryOperator::Multiply => write!(f, "*"),
+            BinaryOperator::Divide => write!(f, "/"),
+            BinaryOperator::Modulo => write!(f, "%"),
+            BinaryOperator::And => write!(f, "&&"),
+            BinaryOperator::Or => write!(f, "||"),
+            BinaryOperator::Equal => write!(f, "=="),
+            BinaryOperator::NotEqual => write!(f, "!="),
+            BinaryOperator::LessThan => write!(f, "<"),
+            BinaryOperator::GreaterThan => write!(f, ">"),
+            BinaryOperator::LessThanOrEqual => write!(f, "<="),
+            BinaryOperator::GreaterThanOrEqual => write!(f, ">="),
         }
     }
 }
