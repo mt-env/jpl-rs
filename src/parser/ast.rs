@@ -1,4 +1,8 @@
-use crate::{Spanned, lexer::token::TokenKind, parser::ParserCtx};
+use crate::{
+    Spanned,
+    lexer::token::{Token, TokenKind},
+    parser::ParserCtx,
+};
 
 pub type ParsedProgram<'src, 'ast> = Vec<&'ast ParsedCmd<'src, 'ast>>;
 pub type ParsedCmd<'src, 'ast> = Spanned<Cmd<'src, 'ast, ()>>;
@@ -60,19 +64,52 @@ pub enum ExprKind<'src, 'ast, A> {
         &'ast Vec<&'ast Spanned<Expr<'src, 'ast, A>>>,
     ),
     Call(&'src str, Vec<&'ast Spanned<Expr<'src, 'ast, A>>>),
-    If {
-        cond: &'ast Spanned<Expr<'src, 'ast, A>>,
-        then_b: &'ast Spanned<Expr<'src, 'ast, A>>,
-        else_b: &'ast Spanned<Expr<'src, 'ast, A>>,
-    },
+    If(
+        &'ast Spanned<Expr<'src, 'ast, A>>, // cond
+        &'ast Spanned<Expr<'src, 'ast, A>>, // then
+        &'ast Spanned<Expr<'src, 'ast, A>>, // else
+    ),
     ArrayLoop(
-        Vec<(&'src str, &'ast Spanned<Expr<'src, 'ast, A>>)>,
-        &'ast Spanned<Expr<'src, 'ast, A>>,
+        Vec<(&'src str, &'ast Spanned<Expr<'src, 'ast, A>>)>, // bindings
+        &'ast Spanned<Expr<'src, 'ast, A>>,                   // body
     ),
     SumLoop(
-        Vec<(&'src str, &'ast Spanned<Expr<'src, 'ast, A>>)>,
-        &'ast Spanned<Expr<'src, 'ast, A>>,
+        Vec<(&'src str, &'ast Spanned<Expr<'src, 'ast, A>>)>, // bindings
+        &'ast Spanned<Expr<'src, 'ast, A>>,                   // body
     ),
+    UnOp(UnaryOperator, &'ast Spanned<Expr<'src, 'ast, A>>),
+    BinOp(
+        &'ast Spanned<Expr<'src, 'ast, A>>, // left
+        BinaryOperator,
+        &'ast Spanned<Expr<'src, 'ast, A>>, // right
+    ),
+}
+
+pub enum UnaryOperator {
+    Neg,
+    Not,
+}
+
+pub enum BinaryOperator {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Modulo,
+    And,
+    Or,
+    Equal,
+    NotEqual,
+    LessThan,
+    LessThanOrEqual,
+    GreaterThan,
+    GreaterThanOrEqual,
+}
+
+impl BinaryOperator {
+    pub fn from_token(token: Token) -> Self {
+        todo!()
+    }
 }
 
 impl<'src, 'ast> ParsedExpr<'src, 'ast> {

@@ -214,11 +214,7 @@ fn parse_if<'src, 'ast>(
     let then_expr = parse_expr(ctx)?;
     ctx.expect(TokenKind::Else)?;
     let else_expr = parse_expr(ctx)?;
-    let if_expr = ExprKind::If {
-        cond: condition_expr,
-        then_b: then_expr,
-        else_b: else_expr,
-    };
+    let if_expr = ExprKind::If(condition_expr, then_expr, else_expr);
     Ok(ParsedExpr::new(ctx, offset, if_expr))
 }
 
