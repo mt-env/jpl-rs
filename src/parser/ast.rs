@@ -77,36 +77,38 @@ pub enum ExprKind<'src, 'ast, A> {
         Vec<(&'src str, &'ast Spanned<Expr<'src, 'ast, A>>)>, // bindings
         &'ast Spanned<Expr<'src, 'ast, A>>,                   // body
     ),
-    UnOp(UnaryOperator, &'ast Spanned<Expr<'src, 'ast, A>>),
-    BinOp(
+    Unary(UnOp, &'ast Spanned<Expr<'src, 'ast, A>>),
+    Binary(
         &'ast Spanned<Expr<'src, 'ast, A>>, // left
-        BinaryOperator,
+        BinOp,
         &'ast Spanned<Expr<'src, 'ast, A>>, // right
     ),
 }
 
-pub enum UnaryOperator {
+#[derive(Clone, Copy)]
+pub enum UnOp {
     Neg,
     Not,
 }
 
-pub enum BinaryOperator {
+#[derive(Clone, Copy)]
+pub enum BinOp {
     Add,
-    Subtract,
-    Multiply,
-    Divide,
-    Modulo,
+    Sub,
+    Mul,
+    Div,
+    Mod,
     And,
     Or,
-    Equal,
-    NotEqual,
-    LessThan,
-    LessThanOrEqual,
-    GreaterThan,
-    GreaterThanOrEqual,
+    Eq,
+    NotEq,
+    Lt,
+    Lte,
+    Gt,
+    Gte,
 }
 
-impl BinaryOperator {
+impl BinOp {
     pub fn from_token(token: Token) -> Self {
         todo!()
     }

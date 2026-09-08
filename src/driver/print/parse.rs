@@ -1,6 +1,6 @@
 use crate::parser::ast::{
-    BinaryOperator, Cmd, ExprKind, LValue, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt,
-    ParsedType, Stmt, Type, UnaryOperator,
+    BinOp, Cmd, ExprKind, LValue, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt, ParsedType,
+    Stmt, Type, UnOp,
 };
 
 pub fn print_sexp(ast: Vec<&ParsedCmd<'_, '_>>) {
@@ -107,8 +107,8 @@ impl std::fmt::Display for ParsedExpr<'_, '_> {
                 }
                 write!(f, " {body})")
             }
-            ExprKind::UnOp(op, expr) => write!(f, "(UnopExpr {op} {expr})"),
-            ExprKind::BinOp(left, op, right) => write!(f, "(BinopExpr {left} {op} {right})"),
+            ExprKind::Unary(op, expr) => write!(f, "(UnopExpr {op} {expr})"),
+            ExprKind::Binary(left, op, right) => write!(f, "(BinopExpr {left} {op} {right})"),
         }
     }
 }
@@ -154,31 +154,31 @@ impl std::fmt::Display for ParsedStmt<'_, '_> {
     }
 }
 
-impl std::fmt::Display for UnaryOperator {
+impl std::fmt::Display for UnOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UnaryOperator::Not => write!(f, "!"),
-            UnaryOperator::Neg => write!(f, "-"),
+            UnOp::Not => write!(f, "!"),
+            UnOp::Neg => write!(f, "-"),
         }
     }
 }
 
-impl std::fmt::Display for BinaryOperator {
+impl std::fmt::Display for BinOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BinaryOperator::Add => write!(f, "+"),
-            BinaryOperator::Subtract => write!(f, "-"),
-            BinaryOperator::Multiply => write!(f, "*"),
-            BinaryOperator::Divide => write!(f, "/"),
-            BinaryOperator::Modulo => write!(f, "%"),
-            BinaryOperator::And => write!(f, "&&"),
-            BinaryOperator::Or => write!(f, "||"),
-            BinaryOperator::Equal => write!(f, "=="),
-            BinaryOperator::NotEqual => write!(f, "!="),
-            BinaryOperator::LessThan => write!(f, "<"),
-            BinaryOperator::GreaterThan => write!(f, ">"),
-            BinaryOperator::LessThanOrEqual => write!(f, "<="),
-            BinaryOperator::GreaterThanOrEqual => write!(f, ">="),
+            BinOp::Add => write!(f, "+"),
+            BinOp::Sub => write!(f, "-"),
+            BinOp::Mul => write!(f, "*"),
+            BinOp::Div => write!(f, "/"),
+            BinOp::Mod => write!(f, "%"),
+            BinOp::And => write!(f, "&&"),
+            BinOp::Or => write!(f, "||"),
+            BinOp::Eq => write!(f, "=="),
+            BinOp::NotEq => write!(f, "!="),
+            BinOp::Lt => write!(f, "<"),
+            BinOp::Gt => write!(f, ">"),
+            BinOp::Lte => write!(f, "<="),
+            BinOp::Gte => write!(f, ">="),
         }
     }
 }
