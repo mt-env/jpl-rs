@@ -64,12 +64,13 @@ fn parse_expr_precedence<'src, 'ast>(
         let Some(binop) = ctx.try_peek_binop() else {
             break;
         };
-        ctx.expect(TokenKind::Op)?;
 
         let prec = Prec::of_binop(binop);
-        if prec > min_prec {
+        if prec < min_prec {
             break;
         }
+
+        ctx.expect(TokenKind::Op)?;
 
         let right = parse_expr_precedence(ctx, prec.next())?;
         left = ParsedExpr::new(ctx, left.offset, ExprKind::Binary(left, binop, right));
