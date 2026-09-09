@@ -1,21 +1,26 @@
 use crate::{
     parser::ast::ParsedExpr,
-    typechecker::ast::{TypeError, TypeValue, TypedCmd},
+    typechecker::{
+        ast::{TypeError, TypeValue, TypedCmd},
+        typecheck_ctx::TypecheckCtx,
+    },
 };
 
 mod check;
 mod infer;
 
 pub(super) fn check<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
     expr: &'old ParsedExpr<'src, 'old>,
     expected: &'new TypeValue<'src, 'new>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     // can't chain `pub(super) use`, lame
-    check::check(expr, expected)
+    check::check(ctx, expr, expected)
 }
 
 pub(super) fn infer<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
     expr: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
-    infer::infer(expr)
+    infer::infer(ctx, expr)
 }
