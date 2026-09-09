@@ -42,9 +42,7 @@ pub fn run() -> ExitCode {
         }
     };
 
-    if let Some(mode) = mode
-        && mode == Mode::Lex
-    {
+    if mode == Some(Mode::Lex) {
         print::lex::print_tokens(tokens);
         println!("Compilation succeeded: lexical analysis complete");
         return ExitCode::from(0);
@@ -60,12 +58,14 @@ pub fn run() -> ExitCode {
         }
     };
 
-    if let Some(mode) = mode
-        && mode == Mode::Parse
-    {
+    if mode == Some(Mode::Parse) {
         print::parse::print_sexp(parsed_program);
         println!("Compilation succeeded: parsing complete");
         return ExitCode::from(0);
+    }
+
+    if mode == Some(Mode::Typecheck) {
+        todo!()
     }
 
     todo!()
