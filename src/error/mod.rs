@@ -1,5 +1,6 @@
 pub mod lex;
 pub mod parse;
+pub mod typecheck;
 
 fn get_line_and_column(program: &str, pos: usize) -> (usize, usize) {
     let mut line = 1;
