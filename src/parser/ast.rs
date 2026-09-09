@@ -1,8 +1,4 @@
-use crate::{
-    Spanned,
-    lexer::token::{Token, TokenKind},
-    parser::ParserCtx,
-};
+use crate::{Spanned, lexer::token::TokenKind, parser::ParserCtx};
 
 pub type ParsedProgram<'src, 'ast> = Vec<&'ast ParsedCmd<'src, 'ast>>;
 pub type ParsedCmd<'src, 'ast> = Spanned<Cmd<'src, 'ast, ()>>;
@@ -106,12 +102,6 @@ pub enum BinOp {
     Lte,
     Gt,
     Gte,
-}
-
-impl BinOp {
-    pub fn from_token(token: Token) -> Self {
-        todo!()
-    }
 }
 
 impl<'src, 'ast> ParsedExpr<'src, 'ast> {

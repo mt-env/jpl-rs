@@ -24,19 +24,6 @@ impl<'src, 'ast> ParserCtx<'src, 'ast> {
         self.tokens.get(self.curr_pos).copied()
     }
 
-    pub(super) fn peek_or_error(&self) -> Result<Token<'src>, ParseError<'src>> {
-        self.peek().ok_or_else(|| {
-            ParseError::new(
-                self.tokens.last().map_or(0, |t| t.offset),
-                ParseErrorKind::UnexpectedToken {
-                    expected: vec![],
-                    found: TokenKind::EndOfFile,
-                    value: "",
-                },
-            )
-        })
-    }
-
     pub(super) fn expect(&mut self, expected: TokenKind) -> Result<Token<'src>, ParseError<'src>> {
         match self.peek() {
             Some(token) if token.kind == expected => {
