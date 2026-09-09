@@ -9,8 +9,8 @@ mod typecheck_ctx;
 mod typecheck_expr;
 
 pub fn typecheck<'src, 'old, 'new>(
-    ast: Vec<ParsedCmd<'src, 'old>>,
     alloc: &'new bumpalo::Bump,
+    ast: Vec<&'old ParsedCmd<'src, 'old>>,
 ) -> Result<TypedProgram<'src, 'new>, TypeError<'src, 'new>> {
     todo!()
 }

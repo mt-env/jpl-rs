@@ -2,7 +2,7 @@ use std::process::ExitCode;
 
 use bumpalo::Bump;
 
-use crate::{error, lexer, parser};
+use crate::{error, lexer, parser, typechecker};
 
 mod print;
 
@@ -64,8 +64,20 @@ pub fn run() -> ExitCode {
         return ExitCode::from(0);
     }
 
+    let typeck_alloc = Bump::with_capacity(ast_alloc.allocated_bytes());
+    let typed_program = match typechecker::typecheck(&typeck_alloc, parsed_program) {
+        Ok(typed_program) => typed_program,
+        Err(type_errors) => {
+            error::typecheck::print_type_error(type_errors, &program);
+            println!("Compilation failed: typechecking failed");
+            return ExitCode::from(1);
+        }
+    };
+
     if mode == Some(Mode::Typecheck) {
-        todo!()
+        print::typecheck::print_typed_program(typed_program);
+        println!("Compilation succeeded: typechecking complete");
+        return ExitCode::from(0);
     }
 
     todo!()
