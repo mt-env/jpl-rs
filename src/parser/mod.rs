@@ -18,7 +18,7 @@ mod parse_type;
 mod parser_ctx;
 
 pub fn parse<'src, 'ast>(
-    alloc: &'ast mut Bump,
+    alloc: &'ast Bump,
     tokens: Vec<Token<'src>>,
 ) -> Result<ParsedProgram<'src, 'ast>, ParseError<'src>> {
     let mut parser_ctx = ParserCtx::new(alloc, tokens);

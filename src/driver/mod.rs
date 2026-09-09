@@ -48,8 +48,8 @@ pub fn run() -> ExitCode {
         return ExitCode::from(0);
     }
 
-    let mut ast_alloc = Bump::new();
-    let parsed_program = match parser::parse(&mut ast_alloc, tokens) {
+    let ast_alloc = Bump::new(); // this is mutable, thanks RefCell
+    let parsed_program = match parser::parse(&ast_alloc, tokens) {
         Ok(parsed_program) => parsed_program,
         Err(parse_errors) => {
             error::parse::print_parse_error(parse_errors, &program);
