@@ -8,7 +8,7 @@ use crate::{
 };
 
 fn typecheck_cmd<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
+    ctx: &TypecheckCtx<'src, 'new>,
     cmd: &'old ParsedCmd<'src, 'old>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     match &cmd.value {
@@ -19,7 +19,7 @@ fn typecheck_cmd<'src, 'old, 'new>(
 }
 
 fn typecheck_show<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
+    ctx: &TypecheckCtx<'src, 'new>,
     expr: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     let typed_expr = typecheck_expr::infer(ctx, expr)?;
@@ -27,7 +27,7 @@ fn typecheck_show<'src, 'old, 'new>(
 }
 
 fn typecheck_struct<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
+    ctx: &TypecheckCtx<'src, 'new>,
     name: &'old str,
     fields: &Vec<(&'src str, &'old ParsedType<'src, 'old>)>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {

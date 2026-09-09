@@ -1,13 +1,13 @@
 use crate::Spanned;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy)]
 pub struct Token<'a> {
     pub kind: TokenKind,
     pub offset: usize,
     pub str: &'a str,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum TokenKind {
     // primitive values
     True,
@@ -69,7 +69,6 @@ impl<'a> Token<'a> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LexErrorKind {
     UnterminatedString,
     UnterminatedComment,

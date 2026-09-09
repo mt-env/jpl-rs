@@ -7,7 +7,7 @@ use crate::{
 };
 
 pub(super) fn infer<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
+    ctx: &TypecheckCtx<'src, 'new>,
     expr: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     todo!()

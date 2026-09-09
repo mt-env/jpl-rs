@@ -28,11 +28,11 @@ pub fn print_parse_error(
         } => {
             let expected_str = expected
                 .iter()
-                .map(|kind| format!("{kind:?}"))
+                .map(|kind| format!("{kind}"))
                 .collect::<Vec<_>>()
                 .join(", ");
             println!(
-                "Parse error at line {line}, column {column}: Unexpected token '{value}' of kind '{found:?}', expected one of: {expected_str}",
+                "Parse error at line {line}, column {column}: Unexpected token '{value}' of kind '{found}', expected one of: {expected_str}",
             );
         }
     }

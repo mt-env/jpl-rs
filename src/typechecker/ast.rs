@@ -8,7 +8,7 @@ pub enum TypeValue<'src, 'ast> {
     Bool,
     Float,
     Array {
-        element_type: &'ast TypeValue<'src, 'ast>,
+        element_type: &'ast Self,
         dimension: usize,
     },
     Struct {
@@ -28,13 +28,13 @@ pub type TypedBinding<'src, 'ast> = Spanned<Binding<'src, 'ast>>;
 pub type TypeError<'src, 'ast> = Spanned<TypeErrorKind<'src, 'ast>>;
 
 impl<'src, 'ast> TypedCmd<'src, 'ast> {
-    pub fn new(offset: usize, cmd: Cmd<'src, 'ast, TypeValue<'src, 'ast>>) -> Self {
+    pub(super) const fn new(offset: usize, cmd: Cmd<'src, 'ast, TypeValue<'src, 'ast>>) -> Self {
         Spanned { offset, value: cmd }
     }
 }
 
 impl<'src, 'ast> TypedExpr<'src, 'ast> {
-    pub fn new(offset: usize, expr: Expr<'src, 'ast, TypeValue<'src, 'ast>>) -> Self {
+    pub(super) const fn new(offset: usize, expr: Expr<'src, 'ast, TypeValue<'src, 'ast>>) -> Self {
         Spanned {
             offset,
             value: expr,
@@ -43,7 +43,7 @@ impl<'src, 'ast> TypedExpr<'src, 'ast> {
 }
 
 impl<'src, 'ast> TypedStmt<'src, 'ast> {
-    pub fn new(offset: usize, stmt: Stmt<'src, 'ast, TypeValue<'src, 'ast>>) -> Self {
+    pub(super) const fn new(offset: usize, stmt: Stmt<'src, 'ast, TypeValue<'src, 'ast>>) -> Self {
         Spanned {
             offset,
             value: stmt,

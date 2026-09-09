@@ -157,8 +157,8 @@ impl std::fmt::Display for ParsedStmt<'_, '_> {
 impl std::fmt::Display for UnOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UnOp::Not => write!(f, "!"),
-            UnOp::Neg => write!(f, "-"),
+            Self::Not => write!(f, "!"),
+            Self::Neg => write!(f, "-"),
         }
     }
 }
@@ -166,19 +166,19 @@ impl std::fmt::Display for UnOp {
 impl std::fmt::Display for BinOp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BinOp::Add => write!(f, "+"),
-            BinOp::Sub => write!(f, "-"),
-            BinOp::Mul => write!(f, "*"),
-            BinOp::Div => write!(f, "/"),
-            BinOp::Mod => write!(f, "%"),
-            BinOp::And => write!(f, "&&"),
-            BinOp::Or => write!(f, "||"),
-            BinOp::Eq => write!(f, "=="),
-            BinOp::NotEq => write!(f, "!="),
-            BinOp::Lt => write!(f, "<"),
-            BinOp::Gt => write!(f, ">"),
-            BinOp::Lte => write!(f, "<="),
-            BinOp::Gte => write!(f, ">="),
+            Self::Add => write!(f, "+"),
+            Self::Sub => write!(f, "-"),
+            Self::Mul => write!(f, "*"),
+            Self::Div => write!(f, "/"),
+            Self::Mod => write!(f, "%"),
+            Self::And => write!(f, "&&"),
+            Self::Or => write!(f, "||"),
+            Self::Eq => write!(f, "=="),
+            Self::NotEq => write!(f, "!="),
+            Self::Lt => write!(f, "<"),
+            Self::Gt => write!(f, ">"),
+            Self::Lte => write!(f, "<="),
+            Self::Gte => write!(f, ">="),
         }
     }
 }

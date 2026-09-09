@@ -8,7 +8,7 @@ use crate::{
 
 mod parse_primary;
 
-#[derive(PartialEq, PartialOrd)]
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
 enum Prec {
     Prefix = 0,
     Logic = 1,
@@ -16,28 +16,27 @@ enum Prec {
     Add = 3,
     Mult = 4,
     Unary = 5,
-    OOB = 6,
+    OoB = 6,
 }
 
 impl Prec {
-    fn of_binop(binop: BinOp) -> Self {
+    const fn of_binop(binop: BinOp) -> Self {
         match binop {
-            BinOp::Mul | BinOp::Div | BinOp::Mod => Prec::Mult,
-            BinOp::Add | BinOp::Sub => Prec::Add,
-            BinOp::Lt | BinOp::Lte | BinOp::Gt | BinOp::Gte | BinOp::Eq | BinOp::NotEq => Prec::Cmp,
-            BinOp::And | BinOp::Or => Prec::Logic,
+            BinOp::Mul | BinOp::Div | BinOp::Mod => Self::Mult,
+            BinOp::Add | BinOp::Sub => Self::Add,
+            BinOp::Lt | BinOp::Lte | BinOp::Gt | BinOp::Gte | BinOp::Eq | BinOp::NotEq => Self::Cmp,
+            BinOp::And | BinOp::Or => Self::Logic,
         }
     }
 
-    fn next(&self) -> Self {
+    const fn next(self) -> Self {
         match self {
-            Prec::Prefix => Prec::Logic,
-            Prec::Logic => Prec::Cmp,
-            Prec::Cmp => Prec::Add,
-            Prec::Add => Prec::Mult,
-            Prec::Mult => Prec::Unary,
-            Prec::Unary => Prec::OOB,
-            Prec::OOB => Prec::OOB,
+            Self::Prefix => Self::Logic,
+            Self::Logic => Self::Cmp,
+            Self::Cmp => Self::Add,
+            Self::Add => Self::Mult,
+            Self::Mult => Self::Unary,
+            Self::Unary | Self::OoB => Self::OoB,
         }
     }
 }
@@ -60,11 +59,7 @@ fn parse_expr_precedence<'src, 'ast>(
         parse_primary::parse_primary(ctx)?
     };
 
-    loop {
-        let Some(binop) = ctx.try_peek_binop() else {
-            break;
-        };
-
+    while let Some(binop) = ctx.try_peek_binop() {
         let prec = Prec::of_binop(binop);
         if prec < min_prec {
             break;
