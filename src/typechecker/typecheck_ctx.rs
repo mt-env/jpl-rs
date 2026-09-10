@@ -9,3 +9,9 @@ pub(super) struct TypecheckCtx<'src, 'ast> {
     env: HashMap<&'src str, &'ast TypeValue<'src, 'ast>>, // TODO this might need to be changed for
                                                           // structs/functions
 }
+
+impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
+    pub(super) fn alloc<A>(&self, value: A) -> &'ast A {
+        self.alloc.alloc(value)
+    }
+}

@@ -1,6 +1,7 @@
 use crate::{
     Spanned,
     parser::ast::{Binding, Cmd, Expr, LValue, Stmt, Type},
+    typechecker::typecheck_ctx::TypecheckCtx,
 };
 
 pub enum TypeValue<'src, 'ast> {
@@ -28,26 +29,38 @@ pub type TypedBinding<'src, 'ast> = Spanned<Binding<'src, 'ast>>;
 pub type TypeError<'src, 'ast> = Spanned<TypeErrorKind<'src, 'ast>>;
 
 impl<'src, 'ast> TypedCmd<'src, 'ast> {
-    pub(super) const fn new(offset: usize, cmd: Cmd<'src, 'ast, TypeValue<'src, 'ast>>) -> Self {
-        Spanned { offset, value: cmd }
+    pub(super) fn new(
+        ctx: &TypecheckCtx<'src, 'ast>,
+        offset: usize,
+        cmd: Cmd<'src, 'ast, TypeValue<'src, 'ast>>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned { offset, value: cmd })
     }
 }
 
 impl<'src, 'ast> TypedExpr<'src, 'ast> {
-    pub(super) const fn new(offset: usize, expr: Expr<'src, 'ast, TypeValue<'src, 'ast>>) -> Self {
-        Spanned {
+    pub(super) fn new(
+        ctx: &TypecheckCtx<'src, 'ast>,
+        offset: usize,
+        expr: Expr<'src, 'ast, TypeValue<'src, 'ast>>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned {
             offset,
             value: expr,
-        }
+        })
     }
 }
 
 impl<'src, 'ast> TypedStmt<'src, 'ast> {
-    pub(super) const fn new(offset: usize, stmt: Stmt<'src, 'ast, TypeValue<'src, 'ast>>) -> Self {
-        Spanned {
+    pub(super) fn new(
+        ctx: &TypecheckCtx<'src, 'ast>,
+        offset: usize,
+        stmt: Stmt<'src, 'ast, TypeValue<'src, 'ast>>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned {
             offset,
             value: stmt,
-        }
+        })
     }
 }
 
