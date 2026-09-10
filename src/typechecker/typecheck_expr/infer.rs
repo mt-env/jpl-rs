@@ -1,7 +1,7 @@
 use crate::{
     parser::ast::ParsedExpr,
     typechecker::{
-        ast::{TypeError, TypedCmd},
+        ast::{TypeError, TypedExpr},
         typecheck_ctx::TypecheckCtx,
     },
 };
@@ -9,6 +9,6 @@ use crate::{
 pub(super) fn infer<'src, 'old, 'new>(
     ctx: &TypecheckCtx<'src, 'new>,
     expr: &'old ParsedExpr<'src, 'old>,
-) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     todo!()
 }
