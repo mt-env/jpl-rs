@@ -1,5 +1,5 @@
 use crate::{
-    parser::ast::{Expr, ExprKind, ParsedExpr},
+    parser::ast::{ExprKind, ParsedExpr},
     typechecker::{
         ast::{TypeError, TypeValue, TypedExpr},
         typecheck_ctx::TypecheckCtx,
@@ -35,7 +35,7 @@ fn infer_int<'src, 'old, 'new>(
     offset: usize,
     val: i64,
 ) -> &'new TypedExpr<'src, 'new> {
-    TypedExpr::new(ctx, offset, ExprKind::Int(val), TypeValue::Int)
+    TypedExpr::new(ctx, offset, ExprKind::Int(val), &TypeValue::Int)
 }
 
 fn infer_float<'src, 'old, 'new>(
@@ -43,7 +43,7 @@ fn infer_float<'src, 'old, 'new>(
     offset: usize,
     val: f64,
 ) -> &'new TypedExpr<'src, 'new> {
-    TypedExpr::new(ctx, offset, ExprKind::Float(val), TypeValue::Float)
+    TypedExpr::new(ctx, offset, ExprKind::Float(val), &TypeValue::Float)
 }
 
 fn infer_bool<'src, 'old, 'new>(
@@ -51,12 +51,12 @@ fn infer_bool<'src, 'old, 'new>(
     offset: usize,
     val: bool,
 ) -> &'new TypedExpr<'src, 'new> {
-    TypedExpr::new(ctx, offset, ExprKind::Bool(val), TypeValue::Bool)
+    TypedExpr::new(ctx, offset, ExprKind::Bool(val), &TypeValue::Bool)
 }
 
 fn infer_void<'src, 'old, 'new>(
     ctx: &TypecheckCtx<'src, 'new>,
     offset: usize,
 ) -> &'new TypedExpr<'src, 'new> {
-    TypedExpr::new(ctx, offset, ExprKind::Void, TypeValue::Void)
+    TypedExpr::new(ctx, offset, ExprKind::Void, &TypeValue::Void)
 }

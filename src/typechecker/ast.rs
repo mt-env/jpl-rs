@@ -19,11 +19,11 @@ pub enum TypeValue<'src, 'ast> {
 }
 
 pub type TypedProgram<'src, 'ast> = Vec<&'ast TypedCmd<'src, 'ast>>;
-pub type TypedCmd<'src, 'ast> = Spanned<Cmd<'src, 'ast, TypeValue<'src, 'ast>>>;
-pub type TypedExpr<'src, 'ast> = Spanned<Expr<'src, 'ast, TypeValue<'src, 'ast>>>;
+pub type TypedCmd<'src, 'ast> = Spanned<Cmd<'src, 'ast, &'ast TypeValue<'src, 'ast>>>;
+pub type TypedExpr<'src, 'ast> = Spanned<Expr<'src, 'ast, &'ast TypeValue<'src, 'ast>>>;
 pub type TypedLValue<'src> = Spanned<LValue<'src>>;
 pub type TypedType<'src, 'ast> = Spanned<Type<'src, 'ast>>;
-pub type TypedStmt<'src, 'ast> = Spanned<Stmt<'src, 'ast, TypeValue<'src, 'ast>>>;
+pub type TypedStmt<'src, 'ast> = Spanned<Stmt<'src, 'ast, &'ast TypeValue<'src, 'ast>>>;
 pub type TypedBinding<'src, 'ast> = Spanned<Binding<'src, 'ast>>;
 
 pub type TypeError<'src, 'ast> = Spanned<TypeErrorKind<'src, 'ast>>;
@@ -32,7 +32,7 @@ impl<'src, 'ast> TypedCmd<'src, 'ast> {
     pub(super) fn new(
         ctx: &TypecheckCtx<'src, 'ast>,
         offset: usize,
-        cmd: Cmd<'src, 'ast, TypeValue<'src, 'ast>>,
+        cmd: Cmd<'src, 'ast, &'ast TypeValue<'src, 'ast>>,
     ) -> &'ast Self {
         ctx.alloc(Spanned { offset, value: cmd })
     }
@@ -42,8 +42,8 @@ impl<'src, 'ast> TypedExpr<'src, 'ast> {
     pub(super) fn new(
         ctx: &TypecheckCtx<'src, 'ast>,
         offset: usize,
-        kind: ExprKind<'src, 'ast, TypeValue<'src, 'ast>>, // expr: Expr<'src, 'ast, TypeValue<'src, 'ast>>,
-        ty: TypeValue<'src, 'ast>,
+        kind: ExprKind<'src, 'ast, &'ast TypeValue<'src, 'ast>>,
+        ty: &'ast TypeValue<'src, 'ast>,
     ) -> &'ast Self {
         ctx.alloc(Spanned {
             offset,
@@ -56,7 +56,7 @@ impl<'src, 'ast> TypedStmt<'src, 'ast> {
     pub(super) fn new(
         ctx: &TypecheckCtx<'src, 'ast>,
         offset: usize,
-        stmt: Stmt<'src, 'ast, TypeValue<'src, 'ast>>,
+        stmt: Stmt<'src, 'ast, &'ast TypeValue<'src, 'ast>>,
     ) -> &'ast Self {
         ctx.alloc(Spanned {
             offset,
