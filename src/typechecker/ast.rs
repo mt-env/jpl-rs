@@ -1,6 +1,6 @@
 use crate::{
     Spanned,
-    parser::ast::{Binding, Cmd, Expr, LValue, Stmt, Type},
+    parser::ast::{Binding, Cmd, Expr, ExprKind, LValue, Stmt, Type},
     typechecker::typecheck_ctx::TypecheckCtx,
 };
 
@@ -42,11 +42,12 @@ impl<'src, 'ast> TypedExpr<'src, 'ast> {
     pub(super) fn new(
         ctx: &TypecheckCtx<'src, 'ast>,
         offset: usize,
-        expr: Expr<'src, 'ast, TypeValue<'src, 'ast>>,
+        kind: ExprKind<'src, 'ast, TypeValue<'src, 'ast>>, // expr: Expr<'src, 'ast, TypeValue<'src, 'ast>>,
+        ty: TypeValue<'src, 'ast>,
     ) -> &'ast Self {
         ctx.alloc(Spanned {
             offset,
-            value: expr,
+            value: Expr { ann: ty, kind },
         })
     }
 }
