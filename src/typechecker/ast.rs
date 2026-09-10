@@ -4,6 +4,7 @@ use crate::{
     typechecker::typecheck_ctx::TypecheckCtx,
 };
 
+#[derive(Clone, Copy)]
 pub enum TypeValue<'src, 'ast> {
     Int,
     Bool,
@@ -70,4 +71,10 @@ pub enum TypeErrorKind<'src, 'ast> {
         expected: &'ast [TypeValue<'src, 'ast>],
         found: &'ast TypeValue<'src, 'ast>,
     },
+}
+
+impl<'src, 'ast> TypeValue<'src, 'ast> {
+    pub(super) fn new(ctx: &TypecheckCtx<'src, 'ast>, value: Self) -> &'ast Self {
+        ctx.alloc(value)
+    }
 }

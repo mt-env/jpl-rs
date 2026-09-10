@@ -18,7 +18,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::Bool(val) => Ok(infer_bool(ctx, loc, *val)),
         ExprKind::Var(_) => todo!(),
         ExprKind::Void => Ok(infer_void(ctx, loc)),
-        ExprKind::ArrayLiteral(_) => todo!(),
+        ExprKind::ArrayLiteral(elements) => infer_array_literal(ctx, loc, elements),
         ExprKind::StructLiteral(_, _) => todo!(),
         ExprKind::Dot(_, _) => todo!(),
         ExprKind::ArrayIndex(_, _) => todo!(),
@@ -60,6 +60,41 @@ fn infer_void<'src, 'old, 'new>(
     offset: usize,
 ) -> &'new TypedExpr<'src, 'new> {
     TypedExpr::new(ctx, offset, ExprKind::Void, &TypeValue::Void)
+}
+
+fn infer_array_literal<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    offset: usize,
+    elements: &Vec<&'old ParsedExpr<'src, 'old>>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    let mut typed_exprs = Vec::new();
+    let mut parsed_exprs = elements.into_iter();
+
+    // empty array is a type error
+    let Some(first_element) = parsed_exprs.next() else {
+        todo!()
+    };
+
+    // check the rest
+    let typed_first_element = infer(ctx, first_element)?;
+    let element_type = typed_first_element.value.ann;
+    while let Some(element) = parsed_exprs.next() {
+        typed_exprs.push(typecheck_expr::check(ctx, element, element_type)?);
+    }
+
+    // return the element
+    Ok(TypedExpr::new(
+        ctx,
+        offset,
+        ExprKind::ArrayLiteral(typed_exprs),
+        TypeValue::new(
+            ctx,
+            TypeValue::Array {
+                element_type,
+                dimension: 1,
+            },
+        ),
+    ))
 }
 
 fn infer_if<'src, 'old, 'new>(
