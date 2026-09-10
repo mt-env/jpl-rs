@@ -3,6 +3,7 @@ use crate::{
     typechecker::{
         ast::{TypeError, TypeValue, TypedExpr},
         typecheck_ctx::TypecheckCtx,
+        typecheck_expr,
     },
 };
 
@@ -22,7 +23,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::Dot(_, _) => todo!(),
         ExprKind::ArrayIndex(_, _) => todo!(),
         ExprKind::Call(_, _) => todo!(),
-        ExprKind::If(_, _, _) => todo!(),
+        ExprKind::If(cond, thenb, elseb) => infer_if(ctx, loc, cond, thenb, elseb),
         ExprKind::ArrayLoop(_, _) => todo!(),
         ExprKind::SumLoop(_, _) => todo!(),
         ExprKind::Unary(_, _) => todo!(),
@@ -59,4 +60,23 @@ fn infer_void<'src, 'old, 'new>(
     offset: usize,
 ) -> &'new TypedExpr<'src, 'new> {
     TypedExpr::new(ctx, offset, ExprKind::Void, &TypeValue::Void)
+}
+
+fn infer_if<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    offset: usize,
+    cond: &'old ParsedExpr<'src, 'old>,
+    thenb: &'old ParsedExpr<'src, 'old>,
+    elseb: &'old ParsedExpr<'src, 'old>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    let typed_cond = typecheck_expr::check(ctx, cond, &TypeValue::Bool)?;
+    let typed_thenb = infer(ctx, thenb)?;
+    let ternary_type = typed_thenb.value.ann;
+    let typed_elseb = typecheck_expr::check(ctx, elseb, ternary_type)?;
+    Ok(TypedExpr::new(
+        ctx,
+        offset,
+        ExprKind::If(typed_cond, typed_thenb, typed_elseb),
+        ternary_type,
+    ))
 }
