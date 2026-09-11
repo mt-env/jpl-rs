@@ -1,5 +1,5 @@
 use crate::{
-    parser::ast::{ExprKind, ParsedExpr, UnOp},
+    parser::ast::{BinOp, ExprKind, ParsedExpr, UnOp},
     typechecker::{
         ast::{TypeError, TypeValue, TypedExpr},
         typecheck_ctx::TypecheckCtx,
@@ -27,7 +27,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::ArrayLoop(_, _) => todo!(),
         ExprKind::SumLoop(_, _) => todo!(),
         ExprKind::Unary(op, inner) => infer_unop(ctx, loc, *op, inner),
-        ExprKind::Binary(_, _, _) => todo!(),
+        ExprKind::Binary(left, op, right) => infer_binop(ctx, loc, left, *op, right),
     }
 }
 
@@ -143,4 +143,75 @@ fn infer_unop<'src, 'old, 'new>(
             ))
         }
     }
+}
+
+fn infer_binop<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    offset: usize,
+    left: &'old ParsedExpr<'src, 'old>,
+    op: BinOp,
+    right: &'old ParsedExpr<'src, 'old>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    match op {
+        BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => {
+            infer_arith_binop(ctx, offset, left, op, right)
+        }
+        BinOp::And | BinOp::Or => infer_logic_binop(ctx, offset, left, op, right),
+        BinOp::Eq | BinOp::NotEq | BinOp::Lt | BinOp::Lte | BinOp::Gt | BinOp::Gte => {
+            infer_cmp_binop(ctx, offset, left, op, right)
+        }
+    }
+}
+
+fn infer_arith_binop<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    offset: usize,
+    left: &'old ParsedExpr<'src, 'old>,
+    op: BinOp,
+    right: &'old ParsedExpr<'src, 'old>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    let typed_left = typecheck_expr::check_num(ctx, left)?;
+    let left_type = typed_left.value.ann;
+    let typed_right = typecheck_expr::check(ctx, right, left_type)?;
+    Ok(TypedExpr::new(
+        ctx,
+        offset,
+        ExprKind::Binary(typed_left, op, typed_right),
+        left_type,
+    ))
+}
+
+fn infer_logic_binop<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    offset: usize,
+    left: &'old ParsedExpr<'src, 'old>,
+    op: BinOp,
+    right: &'old ParsedExpr<'src, 'old>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    let typed_left = typecheck_expr::check(ctx, left, &TypeValue::Bool)?;
+    let typed_right = typecheck_expr::check(ctx, right, &TypeValue::Bool)?;
+    Ok(TypedExpr::new(
+        ctx,
+        offset,
+        ExprKind::Binary(typed_left, op, typed_right),
+        &TypeValue::Bool,
+    ))
+}
+
+fn infer_cmp_binop<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    offset: usize,
+    left: &'old ParsedExpr<'src, 'old>,
+    op: BinOp,
+    right: &'old ParsedExpr<'src, 'old>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    let typed_left = typecheck_expr::check_primitive(ctx, left)?;
+    let left_type = typed_left.value.ann;
+    let typed_right = typecheck_expr::check(ctx, right, left_type)?;
+    Ok(TypedExpr::new(
+        ctx,
+        offset,
+        ExprKind::Binary(typed_left, op, typed_right),
+        &TypeValue::Bool,
+    ))
 }
