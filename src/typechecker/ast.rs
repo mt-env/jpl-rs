@@ -67,8 +67,12 @@ impl<'src, 'ast> TypedStmt<'src, 'ast> {
 }
 
 pub enum TypeErrorKind<'src, 'ast> {
-    UnexpectedType {
-        expected: &'ast [TypeValue<'src, 'ast>],
+    ExpectType {
+        expected: &'ast TypeValue<'src, 'ast>,
+        found: &'ast TypeValue<'src, 'ast>,
+    },
+    ExpectTypes {
+        expected: &'ast [&'ast TypeValue<'src, 'ast>],
         found: &'ast TypeValue<'src, 'ast>,
     },
 }
