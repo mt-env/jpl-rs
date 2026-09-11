@@ -39,3 +39,14 @@ pub(super) fn check_num<'src, 'old, 'new>(
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     check::check_many(ctx, expr, &[&TypeValue::Int, &TypeValue::Float])
 }
+
+pub(super) fn check_primitive<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    expr: &'old ParsedExpr<'src, 'old>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    check::check_many(
+        ctx,
+        expr,
+        &[&TypeValue::Int, &TypeValue::Float, &TypeValue::Bool],
+    )
+}
