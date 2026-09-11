@@ -1,5 +1,5 @@
 use crate::{
-    parser::ast::{ExprKind, ParsedExpr},
+    parser::ast::{ExprKind, ParsedExpr, UnOp},
     typechecker::{
         ast::{TypeError, TypeValue, TypedExpr},
         typecheck_ctx::TypecheckCtx,
@@ -26,7 +26,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::If(cond, thenb, elseb) => infer_if(ctx, loc, cond, thenb, elseb),
         ExprKind::ArrayLoop(_, _) => todo!(),
         ExprKind::SumLoop(_, _) => todo!(),
-        ExprKind::Unary(_, _) => todo!(),
+        ExprKind::Unary(op, inner) => infer_unop(ctx, loc, *op, inner),
         ExprKind::Binary(_, _, _) => todo!(),
     }
 }
@@ -114,4 +114,33 @@ fn infer_if<'src, 'old, 'new>(
         ExprKind::If(typed_cond, typed_thenb, typed_elseb),
         ternary_type,
     ))
+}
+
+fn infer_unop<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    offset: usize,
+    op: UnOp,
+    inner: &'old ParsedExpr<'src, 'old>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    match op {
+        UnOp::Neg => {
+            let typed_inner = typecheck_expr::check_num(ctx, inner)?;
+            let inner_type = typed_inner.value.ann;
+            Ok(TypedExpr::new(
+                ctx,
+                offset,
+                ExprKind::Unary(UnOp::Neg, typed_inner),
+                inner_type,
+            ))
+        }
+        UnOp::Not => {
+            let typed_inner = typecheck_expr::check(ctx, inner, &TypeValue::Bool)?;
+            Ok(TypedExpr::new(
+                ctx,
+                offset,
+                ExprKind::Unary(UnOp::Not, typed_inner),
+                &TypeValue::Bool,
+            ))
+        }
+    }
 }
