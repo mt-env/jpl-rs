@@ -15,20 +15,22 @@ pub(super) fn check<'src, 'old, 'new>(
     todo!()
 }
 
-pub(super) fn check_num<'src, 'old, 'new>(
+pub(super) fn check_many<'src, 'old, 'new>(
     ctx: &TypecheckCtx<'src, 'new>,
     expr: &'old ParsedExpr<'src, 'old>,
+    expected: &'new [&'new TypeValue<'src, 'new>],
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     let typed_expr = typecheck_expr::infer(ctx, expr)?;
-    if !matches!(typed_expr.value.ann, TypeValue::Int | TypeValue::Float) {
-        return Err(TypeError {
-            offset: typed_expr.offset,
-            value: TypeErrorKind::ExpectTypes {
-                expected: &[&TypeValue::Int, &TypeValue::Float],
-                found: typed_expr.value.ann,
-            },
-        });
+    for expected_type in expected {
+        if typed_expr.value.ann == *expected_type {
+            return Ok(typed_expr);
+        }
     }
-
-    Ok(typed_expr)
+    Err(TypeError {
+        offset: typed_expr.offset,
+        value: TypeErrorKind::ExpectTypes {
+            expected,
+            found: typed_expr.value.ann,
+        },
+    })
 }

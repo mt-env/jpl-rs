@@ -4,7 +4,7 @@ use crate::{
     typechecker::typecheck_ctx::TypecheckCtx,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum TypeValue<'src, 'ast> {
     Int,
     Bool,
