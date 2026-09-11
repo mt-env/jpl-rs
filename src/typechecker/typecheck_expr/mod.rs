@@ -24,3 +24,10 @@ pub(super) fn infer<'src, 'old, 'new>(
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     infer::infer(ctx, expr)
 }
+
+pub(super) fn check_num<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    expr: &'old ParsedExpr<'src, 'old>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    check::check_num(ctx, expr)
+}
