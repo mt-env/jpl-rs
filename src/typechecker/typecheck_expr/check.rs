@@ -12,7 +12,18 @@ pub(super) fn check<'src, 'old, 'new>(
     expr: &'old ParsedExpr<'src, 'old>,
     expected: &'new TypeValue<'src, 'new>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
-    todo!()
+    let typed_expr = typecheck_expr::infer(ctx, expr)?;
+    if typed_expr.value.ann == expected {
+        Ok(typed_expr)
+    } else {
+        Err(TypeError {
+            offset: typed_expr.offset,
+            value: TypeErrorKind::ExpectType {
+                expected,
+                found: typed_expr.value.ann,
+            },
+        })
+    }
 }
 
 pub(super) fn check_many<'src, 'old, 'new>(
