@@ -153,7 +153,7 @@ pub enum Type<'src, 'ast> {
 }
 
 impl<'src, 'ast> ParsedType<'src, 'ast> {
-    pub(super) fn new(
+    pub(super) fn make_parsed(
         ctx: &ParserCtx<'src, 'ast>,
         offset: usize,
         ty: Type<'src, 'ast>,
