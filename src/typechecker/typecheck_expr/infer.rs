@@ -20,7 +20,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::Void => Ok(infer_void(ctx, loc)),
         ExprKind::ArrayLiteral(elements) => infer_array_literal(ctx, loc, elements),
         ExprKind::StructLiteral(name, fields) => infer_struct_literal(ctx, loc, name, fields),
-        ExprKind::Dot(_, _) => todo!(),
+        ExprKind::Dot(struct_expr, field) => infer_dot(ctx, loc, struct_expr, field),
         ExprKind::ArrayIndex(_, _) => todo!(),
         ExprKind::Call(_, _) => todo!(),
         ExprKind::If(cond, thenb, elseb) => infer_if(ctx, loc, cond, thenb, elseb),
@@ -136,6 +136,49 @@ fn infer_struct_literal<'src, 'old, 'new>(
         ExprKind::StructLiteral(struct_name, resolved_fields),
         TypeValue::new(ctx, TypeValue::Struct { name: struct_name }),
     ))
+}
+
+fn infer_dot<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    offset: usize,
+    struct_expr: &'old ParsedExpr<'src, 'old>,
+    field_name: &'src str,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    // make sure lhs is a struct
+    let typed_struct_expr = infer(ctx, struct_expr)?;
+    let TypeValue::Struct { name: struct_name } = typed_struct_expr.value.ann else {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::DotOnNonStruct,
+        });
+    };
+
+    let Some(NameInfo::Struct(struct_def)) = ctx.lookup(struct_name) else {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::UnknownStruct(struct_name),
+        });
+    };
+
+    // find field
+    for (field, field_type) in struct_def.iter() {
+        if *field == field_name {
+            return Ok(TypedExpr::new(
+                ctx,
+                offset,
+                ExprKind::Dot(typed_struct_expr, field),
+                field_type,
+            ));
+        }
+    }
+
+    Err(TypeError {
+        offset,
+        value: TypeErrorKind::UnknownStructField {
+            struct_name,
+            field_name,
+        },
+    })
 }
 
 fn infer_if<'src, 'old, 'new>(

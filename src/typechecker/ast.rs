@@ -92,6 +92,11 @@ pub enum TypeErrorKind<'src, 'ast> {
         expected: usize,
         actual: usize,
     },
+    DotOnNonStruct,
+    UnknownStructField {
+        struct_name: &'src str,
+        field_name: &'src str,
+    },
 }
 
 impl<'src, 'ast> TypeValue<'src, 'ast> {
