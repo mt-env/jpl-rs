@@ -53,6 +53,16 @@ impl<'src, 'ast> TypedExpr<'src, 'ast> {
     }
 }
 
+impl<'src, 'ast> TypedType<'src, 'ast> {
+    pub(super) fn make_typed(
+        ctx: &TypecheckCtx<'src, 'ast>,
+        offset: usize,
+        ty: Type<'src, 'ast>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned { offset, value: ty })
+    }
+}
+
 impl<'src, 'ast> TypedStmt<'src, 'ast> {
     pub(super) fn new(
         ctx: &TypecheckCtx<'src, 'ast>,
