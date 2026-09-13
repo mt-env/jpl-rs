@@ -86,6 +86,12 @@ pub enum TypeErrorKind<'src, 'ast> {
         found: &'ast TypeValue<'src, 'ast>,
     },
     EmptyArrayLiteral,
+    UnknownStruct(&'src str),
+    StructFieldCountMismatch {
+        struct_name: &'src str,
+        expected: usize,
+        actual: usize,
+    },
 }
 
 impl<'src, 'ast> TypeValue<'src, 'ast> {

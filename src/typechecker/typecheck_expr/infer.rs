@@ -2,7 +2,7 @@ use crate::{
     parser::ast::{BinOp, ExprKind, ParsedExpr, UnOp},
     typechecker::{
         ast::{TypeError, TypeErrorKind, TypeValue, TypedExpr},
-        typecheck_ctx::TypecheckCtx,
+        typecheck_ctx::{NameInfo, TypecheckCtx},
         typecheck_expr,
     },
 };
@@ -19,7 +19,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::Var(_) => todo!(),
         ExprKind::Void => Ok(infer_void(ctx, loc)),
         ExprKind::ArrayLiteral(elements) => infer_array_literal(ctx, loc, elements),
-        ExprKind::StructLiteral(_, _) => todo!(),
+        ExprKind::StructLiteral(name, fields) => infer_struct_literal(ctx, loc, name, fields),
         ExprKind::Dot(_, _) => todo!(),
         ExprKind::ArrayIndex(_, _) => todo!(),
         ExprKind::Call(_, _) => todo!(),
@@ -97,6 +97,44 @@ fn infer_array_literal<'src, 'old, 'new>(
                 dimension: 1,
             },
         ),
+    ))
+}
+
+fn infer_struct_literal<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    offset: usize,
+    struct_name: &'src str,
+    fields: &Vec<&'old ParsedExpr<'src, 'old>>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    let Some(NameInfo::Struct(struct_def)) = ctx.lookup(struct_name) else {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::UnknownStruct(struct_name),
+        });
+    };
+
+    let mut resolved_fields = Vec::new();
+    if struct_def.len() != fields.len() {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::StructFieldCountMismatch {
+                struct_name,
+                expected: struct_def.len(),
+                actual: fields.len(),
+            },
+        });
+    }
+
+    for ((_, field_type), field_expr) in struct_def.iter().zip(fields.iter()) {
+        let resolved_field = typecheck_expr::check(ctx, field_expr, field_type)?;
+        resolved_fields.push(resolved_field);
+    }
+
+    Ok(TypedExpr::new(
+        ctx,
+        offset,
+        ExprKind::StructLiteral(struct_name, resolved_fields),
+        TypeValue::new(ctx, TypeValue::Struct { name: struct_name }),
     ))
 }
 

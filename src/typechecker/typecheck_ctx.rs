@@ -40,4 +40,8 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
         self.env
             .insert(name, NameInfo::new(self, NameInfo::Struct(fields)));
     }
+
+    pub(super) fn lookup(&self, name: &'src str) -> Option<&'ast NameInfo<'src, 'ast>> {
+        self.env.get(name).copied()
+    }
 }
