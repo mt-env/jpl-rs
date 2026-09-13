@@ -1,7 +1,7 @@
 use crate::{
     parser::ast::{BinOp, ExprKind, ParsedExpr, UnOp},
     typechecker::{
-        ast::{TypeError, TypeValue, TypedExpr},
+        ast::{TypeError, TypeErrorKind, TypeValue, TypedExpr},
         typecheck_ctx::TypecheckCtx,
         typecheck_expr,
     },
@@ -72,7 +72,10 @@ fn infer_array_literal<'src, 'old, 'new>(
 
     // empty array is a type error
     let Some(first_element) = parsed_exprs.next() else {
-        todo!()
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::EmptyArrayLiteral,
+        });
     };
 
     // check the rest

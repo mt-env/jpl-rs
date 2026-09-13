@@ -85,6 +85,7 @@ pub enum TypeErrorKind<'src, 'ast> {
         expected: &'ast [&'ast TypeValue<'src, 'ast>],
         found: &'ast TypeValue<'src, 'ast>,
     },
+    EmptyArrayLiteral,
 }
 
 impl<'src, 'ast> TypeValue<'src, 'ast> {
