@@ -102,6 +102,9 @@ fn parse_args() -> Result<Config, CliError> {
                 _ => return Err(CliError::UnknownOption(argument)),
             }
         } else {
+            if filename.is_some() {
+                return Err(CliError::MultipleFilesSpecified);
+            }
             filename = Some(argument);
         }
     }
@@ -130,6 +133,7 @@ enum Mode {
 enum CliError {
     MissingFilename,
     UnknownOption(String),
+    MultipleFilesSpecified,
     MultipleModesSpecified,
 }
 
@@ -138,6 +142,7 @@ impl std::fmt::Debug for CliError {
         match self {
             Self::MissingFilename => write!(f, "Missing filename"),
             Self::UnknownOption(option) => write!(f, "Unknown option: {option}"),
+            Self::MultipleFilesSpecified => write!(f, "Multiple files specified"),
             Self::MultipleModesSpecified => write!(f, "Multiple modes specified"),
         }
     }
