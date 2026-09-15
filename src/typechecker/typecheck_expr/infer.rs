@@ -21,7 +21,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::ArrayLiteral(elements) => infer_array_literal(ctx, loc, elements),
         ExprKind::StructLiteral(name, fields) => infer_struct_literal(ctx, loc, name, fields),
         ExprKind::Dot(struct_expr, field) => infer_dot(ctx, loc, struct_expr, field),
-        ExprKind::ArrayIndex(_, _) => todo!(),
+        ExprKind::ArrayIndex(arr, indices) => infer_array_index(ctx, loc, arr, indices),
         ExprKind::Call(_, _) => todo!(),
         ExprKind::If(cond, thenb, elseb) => infer_if(ctx, loc, cond, thenb, elseb),
         ExprKind::ArrayLoop(_, _) => todo!(),
@@ -179,6 +179,47 @@ fn infer_dot<'src, 'old, 'new>(
             field_name,
         },
     })
+}
+
+fn infer_array_index<'src, 'old, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    offset: usize,
+    arr: &'old ParsedExpr<'src, 'old>,
+    indices: &Vec<&'old ParsedExpr<'src, 'old>>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    let typed_arr = infer(ctx, arr)?;
+    let TypeValue::Array {
+        element_type,
+        dimension,
+    } = typed_arr.value.ann
+    else {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::ArrayIndexOnNonArray,
+        });
+    };
+
+    if indices.len() != *dimension {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::ArrayIndexDimensionMismatch {
+                expected: *dimension,
+                actual: indices.len(),
+            },
+        });
+    }
+
+    let mut typed_indices = Vec::new();
+    for index in indices.iter() {
+        typed_indices.push(typecheck_expr::check(ctx, index, &TypeValue::Int)?);
+    }
+
+    Ok(TypedExpr::new(
+        ctx,
+        offset,
+        ExprKind::ArrayIndex(typed_arr, ctx.alloc(typed_indices)),
+        *element_type,
+    ))
 }
 
 fn infer_if<'src, 'old, 'new>(

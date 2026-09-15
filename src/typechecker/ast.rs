@@ -97,6 +97,11 @@ pub enum TypeErrorKind<'src, 'ast> {
         struct_name: &'src str,
         field_name: &'src str,
     },
+    ArrayIndexOnNonArray,
+    ArrayIndexDimensionMismatch {
+        expected: usize,
+        actual: usize,
+    },
 }
 
 impl<'src, 'ast> TypeValue<'src, 'ast> {
