@@ -22,10 +22,22 @@ pub(super) struct TypecheckCtx<'src, 'ast> {
 
 impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
     pub(super) fn new(alloc: &'ast Bump) -> Self {
-        Self {
+        let mut current = Self {
             alloc,
             env: HashMap::new(),
-        }
+        };
+
+        current.add_struct_info(
+            "rgba",
+            vec![
+                ("r", current.alloc.alloc(TypeValue::Float)),
+                ("g", current.alloc.alloc(TypeValue::Float)),
+                ("b", current.alloc.alloc(TypeValue::Float)),
+                ("a", current.alloc.alloc(TypeValue::Float)),
+            ],
+        );
+
+        current
     }
 
     pub(super) fn alloc<A>(&self, value: A) -> &'ast A {
