@@ -12,6 +12,7 @@ pub mod ast;
 mod typecheck_cmd;
 mod typecheck_ctx;
 mod typecheck_expr;
+mod typecheck_stmt;
 mod typecheck_type;
 
 pub fn typecheck<'src, 'old, 'new>(
