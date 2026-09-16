@@ -19,7 +19,7 @@ pub(super) fn typecheck_cmd<'src, 'old, 'new>(
         Cmd::Write(expr, name) => typecheck_write(ctx, loc, expr, name),
         Cmd::Let(lvalue, expr) => todo!(),
         Cmd::Assert(expr, string) => typecheck_assert(ctx, loc, expr, string),
-        Cmd::Print(string) => todo!(),
+        Cmd::Print(string) => typecheck_print(ctx, loc, string),
         Cmd::Time(cmd) => typecheck_time(ctx, loc, cmd),
         Cmd::Fn {
             name,
@@ -84,6 +84,14 @@ fn typecheck_assert<'src, 'old, 'new>(
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     let typed_expr = typecheck_expr::infer(ctx, expr)?;
     Ok(TypedCmd::new(ctx, offset, Cmd::Assert(typed_expr, msg)))
+}
+
+fn typecheck_print<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
+    offset: usize,
+    msg: &'src str,
+) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
+    Ok(TypedCmd::new(ctx, offset, Cmd::Print(msg)))
 }
 
 fn typecheck_time<'src, 'old, 'new>(
