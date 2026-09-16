@@ -81,6 +81,7 @@ fn infer_array_literal<'src, 'old, 'new>(
     // check the rest
     let typed_first_element = infer(ctx, first_element)?;
     let element_type = typed_first_element.value.ann;
+    typed_exprs.push(typed_first_element);
     while let Some(element) = parsed_exprs.next() {
         typed_exprs.push(typecheck_expr::check(ctx, element, element_type)?);
     }
