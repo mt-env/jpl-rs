@@ -18,7 +18,7 @@ pub(super) fn typecheck_cmd<'src, 'old, 'new>(
         Cmd::Read(name, lvalue) => todo!(),
         Cmd::Write(expr, name) => typecheck_write(ctx, loc, expr, name),
         Cmd::Let(lvalue, expr) => todo!(),
-        Cmd::Assert(expr, string) => todo!(),
+        Cmd::Assert(expr, string) => typecheck_assert(ctx, loc, expr, string),
         Cmd::Print(string) => todo!(),
         Cmd::Time(cmd) => typecheck_time(ctx, loc, cmd),
         Cmd::Fn {
@@ -74,6 +74,16 @@ fn typecheck_write<'src, 'old, 'new>(
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     let typed_expr = typecheck_expr::infer(ctx, expr)?;
     Ok(TypedCmd::new(ctx, offset, Cmd::Write(typed_expr, name)))
+}
+
+fn typecheck_assert<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
+    offset: usize,
+    expr: &'old ParsedExpr<'src, 'old>,
+    msg: &'src str,
+) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
+    let typed_expr = typecheck_expr::infer(ctx, expr)?;
+    Ok(TypedCmd::new(ctx, offset, Cmd::Assert(typed_expr, msg)))
 }
 
 fn typecheck_time<'src, 'old, 'new>(
