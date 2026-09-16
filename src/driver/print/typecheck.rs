@@ -65,7 +65,7 @@ impl std::fmt::Display for TypedExpr<'_, '_> {
             ExprKind::Var(var) => todo!(),
             ExprKind::Void => write!(f, "(VoidExpr {ty_value})"),
             ExprKind::ArrayLiteral(arr) => {
-                write!(f, "(ArrayLiteralExpr")?;
+                write!(f, "(ArrayLiteralExpr {ty_value}")?;
                 for expr in arr {
                     write!(f, " {expr}")?;
                 }
@@ -80,15 +80,16 @@ impl std::fmt::Display for TypedExpr<'_, '_> {
             }
             ExprKind::Dot(expr, field) => write!(f, "(DotExpr {ty_value} {expr} {field})"),
             ExprKind::ArrayIndex(expr, indices) => {
-                write!(f, "(ArrayIndexExpr {expr}")?;
-                write!(f, " {ty_value}")?;
+                write!(f, "(ArrayIndexExpr {ty_value} {expr}")?;
                 for index in indices.iter() {
                     write!(f, " {index}")?;
                 }
                 write!(f, ")")
             }
             ExprKind::Call(name, args) => todo!(),
-            ExprKind::If(cond, then_b, else_b) => write!(f, "(IfExpr {cond} {then_b} {else_b})"),
+            ExprKind::If(cond, then_b, else_b) => {
+                write!(f, "(IfExpr {ty_value} {cond} {then_b} {else_b})")
+            }
             ExprKind::ArrayLoop(loop_vars, body) => todo!(),
             ExprKind::SumLoop(loop_vars, body) => todo!(),
             ExprKind::Unary(op, expr) => write!(f, "(UnopExpr {ty_value} {op} {expr})"),
