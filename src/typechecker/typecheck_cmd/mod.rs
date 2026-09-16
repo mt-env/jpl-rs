@@ -16,7 +16,7 @@ pub(super) fn typecheck_cmd<'src, 'old, 'new>(
         Cmd::Show(expr) => typecheck_show(ctx, loc, expr),
         Cmd::Struct { name, fields } => typecheck_struct(ctx, loc, name, fields),
         Cmd::Read(name, lvalue) => todo!(),
-        Cmd::Write(expr, name) => todo!(),
+        Cmd::Write(expr, name) => typecheck_write(ctx, loc, expr, name),
         Cmd::Let(lvalue, expr) => todo!(),
         Cmd::Assert(expr, string) => todo!(),
         Cmd::Print(string) => todo!(),
@@ -64,6 +64,16 @@ fn typecheck_struct<'src, 'old, 'new>(
             fields: typed_fields,
         },
     ))
+}
+
+fn typecheck_write<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
+    offset: usize,
+    expr: &'old ParsedExpr<'src, 'old>,
+    name: &'src str,
+) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
+    let typed_expr = typecheck_expr::infer(ctx, expr)?;
+    Ok(TypedCmd::new(ctx, offset, Cmd::Write(typed_expr, name)))
 }
 
 fn typecheck_time<'src, 'old, 'new>(
