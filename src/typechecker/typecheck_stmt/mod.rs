@@ -3,6 +3,7 @@ use crate::{
     typechecker::{
         TypecheckCtx,
         ast::{TypeError, TypedStmt},
+        typecheck_expr,
     },
 };
 
@@ -33,7 +34,8 @@ fn typecheck_assert<'src, 'old, 'new>(
     expr: &'old ParsedExpr<'src, 'old>,
     msg: &'src str,
 ) -> Result<&'new TypedStmt<'src, 'new>, TypeError<'src, 'new>> {
-    todo!()
+    let typed_expr = typecheck_expr::infer(ctx, expr)?;
+    Ok(TypedStmt::new(ctx, offset, Stmt::Assert(typed_expr, msg)))
 }
 
 fn typecheck_return<'src, 'old, 'new>(
