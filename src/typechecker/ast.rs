@@ -53,6 +53,19 @@ impl<'src, 'ast> TypedExpr<'src, 'ast> {
     }
 }
 
+impl<'src, 'ast> TypedLValue<'src> {
+    pub(super) fn make_typed(
+        ctx: &TypecheckCtx<'src, 'ast>,
+        offset: usize,
+        lvalue: LValue<'src>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned {
+            offset,
+            value: lvalue,
+        })
+    }
+}
+
 impl<'src, 'ast> TypedType<'src, 'ast> {
     pub(super) fn make_typed(
         ctx: &TypecheckCtx<'src, 'ast>,
@@ -72,6 +85,19 @@ impl<'src, 'ast> TypedStmt<'src, 'ast> {
         ctx.alloc(Spanned {
             offset,
             value: stmt,
+        })
+    }
+}
+
+impl<'src, 'ast> TypedBinding<'src, 'ast> {
+    pub(super) fn make_typed(
+        ctx: &TypecheckCtx<'src, 'ast>,
+        offset: usize,
+        binding: Binding<'src, 'ast>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned {
+            offset,
+            value: binding,
         })
     }
 }

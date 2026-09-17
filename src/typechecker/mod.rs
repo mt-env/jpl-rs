@@ -9,9 +9,11 @@ use crate::{
 };
 
 pub mod ast;
+mod typecheck_binding;
 mod typecheck_cmd;
 mod typecheck_ctx;
 mod typecheck_expr;
+mod typecheck_lvalue;
 mod typecheck_stmt;
 mod typecheck_type;
 
