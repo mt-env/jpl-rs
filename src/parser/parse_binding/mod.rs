@@ -15,5 +15,9 @@ pub(super) fn parse_binding<'src, 'ast>(
     ctx.expect(TokenKind::Colon)?;
     let ty = parse_type::parse_type(ctx)?;
 
-    Ok(ParsedBinding::new(ctx, offset, Binding { lvalue, ty }))
+    Ok(ParsedBinding::make_parsed(
+        ctx,
+        offset,
+        Binding { lvalue, ty },
+    ))
 }

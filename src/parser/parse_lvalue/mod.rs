@@ -16,7 +16,7 @@ pub(super) fn parse_lvalue<'src, 'ast>(
     } = ctx.expect(TokenKind::Variable)?;
 
     if !ctx.peek_is(TokenKind::LSquare) {
-        return Ok(ParsedLValue::new(ctx, offset, LValue::Var(str)));
+        return Ok(ParsedLValue::make_parsed(ctx, offset, LValue::Var(str)));
     }
 
     // parse array dimension bindings if necessary
@@ -33,5 +33,9 @@ pub(super) fn parse_lvalue<'src, 'ast>(
         }
     }
     ctx.expect(TokenKind::RSquare)?;
-    Ok(ParsedLValue::new(ctx, offset, LValue::Array(str, vars)))
+    Ok(ParsedLValue::make_parsed(
+        ctx,
+        offset,
+        LValue::Array(str, vars),
+    ))
 }

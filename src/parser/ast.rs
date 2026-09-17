@@ -120,13 +120,14 @@ impl<'src, 'ast> ParsedExpr<'src, 'ast> {
     }
 }
 
+#[derive(Clone)]
 pub enum LValue<'src> {
     Var(&'src str),
     Array(&'src str, Vec<&'src str>),
 }
 
 impl<'src, 'ast> ParsedLValue<'src> {
-    pub(super) fn new(
+    pub(super) fn make_parsed(
         ctx: &ParserCtx<'src, 'ast>,
         offset: usize,
         lvalue: LValue<'src>,
@@ -190,7 +191,7 @@ pub struct Binding<'src, 'ast> {
 }
 
 impl<'src, 'ast> ParsedBinding<'src, 'ast> {
-    pub(super) fn new(
+    pub(super) fn make_parsed(
         ctx: &ParserCtx<'src, 'ast>,
         offset: usize,
         binding: Binding<'src, 'ast>,
