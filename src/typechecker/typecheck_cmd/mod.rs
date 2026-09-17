@@ -1,9 +1,10 @@
 use crate::{
-    parser::ast::{Cmd, ParsedCmd, ParsedExpr, ParsedType},
+    parser::ast::{Cmd, ParsedBinding, ParsedCmd, ParsedExpr, ParsedStmt, ParsedType},
     typechecker::{
         ast::{TypeError, TypedCmd},
+        typecheck_binding,
         typecheck_ctx::TypecheckCtx,
-        typecheck_expr, typecheck_type,
+        typecheck_expr, typecheck_stmt, typecheck_type,
     },
 };
 
@@ -26,7 +27,7 @@ pub(super) fn typecheck_cmd<'src, 'old, 'new>(
             params,
             return_type,
             body,
-        } => todo!(),
+        } => typecheck_fn(ctx, loc, name, params, return_type, body),
     }
 }
 
@@ -101,4 +102,38 @@ fn typecheck_time<'src, 'old, 'new>(
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     let typed_cmd = typecheck_cmd(ctx, cmd)?;
     Ok(TypedCmd::new(ctx, offset, Cmd::Time(typed_cmd)))
+}
+
+fn typecheck_fn<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
+    offset: usize,
+    name: &'src str,
+    params: &'old Vec<&'old ParsedBinding<'src, 'old>>,
+    return_type: &'old ParsedType<'src, 'old>,
+    body: &Vec<&'old ParsedStmt<'src, 'old>>,
+) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
+    let mut typed_params = Vec::new();
+    for binding in params {
+        let typed_param = typecheck_binding::typecheck_binding(ctx, binding)?;
+        typed_params.push(typed_param);
+    }
+
+    let mut typed_body = Vec::new();
+    for stmt in body {
+        let typed_stmt = typecheck_stmt::typecheck_stmt(ctx, stmt)?;
+        typed_body.push(typed_stmt);
+    }
+
+    let typed_return_type = typecheck_type::typecheck_type(ctx, return_type)?;
+
+    Ok(TypedCmd::new(
+        ctx,
+        offset,
+        Cmd::Fn {
+            name,
+            params: typed_params,
+            return_type: typed_return_type,
+            body: typed_body,
+        },
+    ))
 }
