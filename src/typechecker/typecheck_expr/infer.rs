@@ -25,7 +25,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::Call(_, _) => todo!(),
         ExprKind::If(cond, thenb, elseb) => infer_if(ctx, loc, cond, thenb, elseb),
         ExprKind::ArrayLoop(bindings, body) => infer_array_loop(ctx, loc, bindings, body),
-        ExprKind::SumLoop(_, _) => todo!(),
+        ExprKind::SumLoop(bindings, body) => infer_sum_loop(ctx, loc, bindings, body),
         ExprKind::Unary(op, inner) => infer_unop(ctx, loc, *op, inner),
         ExprKind::Binary(left, op, right) => infer_binop(ctx, loc, left, *op, right),
     }
@@ -248,6 +248,28 @@ fn infer_array_loop<'src, 'old, 'new>(
     bindings: &Vec<(&'src str, &'old ParsedExpr<'src, 'old>)>,
     body: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    infer_loop_expr(ctx, offset, bindings, body, ExprKind::ArrayLoop)
+}
+
+fn infer_sum_loop<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
+    offset: usize,
+    bindings: &Vec<(&'src str, &'old ParsedExpr<'src, 'old>)>,
+    body: &'old ParsedExpr<'src, 'old>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    infer_loop_expr(ctx, offset, bindings, body, ExprKind::SumLoop)
+}
+
+fn infer_loop_expr<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
+    offset: usize,
+    bindings: &Vec<(&'src str, &'old ParsedExpr<'src, 'old>)>,
+    body: &'old ParsedExpr<'src, 'old>,
+    make: impl Fn(
+        Vec<(&'src str, &'new TypedExpr<'src, 'new>)>,
+        &'new TypedExpr<'src, 'new>,
+    ) -> ExprKind<'src, 'new, &'new TypeValue<'src, 'new>>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     ctx.push_scope();
 
     // each binding must be an int, and is then added to the scope
@@ -267,7 +289,7 @@ fn infer_array_loop<'src, 'old, 'new>(
     Ok(TypedExpr::new(
         ctx,
         offset,
-        ExprKind::ArrayLoop(typed_bindings, typed_body),
+        make(typed_bindings, typed_body),
         typed_body.value.ann,
     ))
 }
