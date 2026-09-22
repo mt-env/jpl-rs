@@ -107,7 +107,14 @@ fn infer_struct_literal<'src, 'old, 'new>(
     struct_name: &'src str,
     fields: &Vec<&'old ParsedExpr<'src, 'old>>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
-    let Some(NameInfo::Struct(struct_def)) = ctx.lookup(struct_name) else {
+    let Some(info) = ctx.lookup(struct_name) else {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::UnknownIdentifier(struct_name),
+        });
+    };
+
+    let NameInfo::Struct(struct_def) = info else {
         return Err(TypeError {
             offset,
             value: TypeErrorKind::UnknownStruct(struct_name),
@@ -154,7 +161,14 @@ fn infer_dot<'src, 'old, 'new>(
         });
     };
 
-    let Some(NameInfo::Struct(struct_def)) = ctx.lookup(struct_name) else {
+    let Some(info) = ctx.lookup(struct_name) else {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::UnknownIdentifier(struct_name),
+        });
+    };
+
+    let NameInfo::Struct(struct_def) = info else {
         return Err(TypeError {
             offset,
             value: TypeErrorKind::UnknownStruct(struct_name),
