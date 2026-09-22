@@ -8,7 +8,7 @@ use crate::{
 };
 
 pub(super) fn check<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     expr: &'old ParsedExpr<'src, 'old>,
     expected: &'new TypeValue<'src, 'new>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
@@ -27,7 +27,7 @@ pub(super) fn check<'src, 'old, 'new>(
 }
 
 pub(super) fn check_many<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     expr: &'old ParsedExpr<'src, 'old>,
     expected: &'new [&'new TypeValue<'src, 'new>],
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {

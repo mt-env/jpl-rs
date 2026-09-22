@@ -8,7 +8,7 @@ use crate::{
 };
 
 pub(super) fn infer<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     expr: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     let loc = expr.offset;
@@ -32,7 +32,7 @@ pub(super) fn infer<'src, 'old, 'new>(
 }
 
 fn infer_int<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     val: i64,
 ) -> &'new TypedExpr<'src, 'new> {
@@ -40,7 +40,7 @@ fn infer_int<'src, 'old, 'new>(
 }
 
 fn infer_float<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     val: f64,
 ) -> &'new TypedExpr<'src, 'new> {
@@ -48,7 +48,7 @@ fn infer_float<'src, 'old, 'new>(
 }
 
 fn infer_bool<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     val: bool,
 ) -> &'new TypedExpr<'src, 'new> {
@@ -56,14 +56,14 @@ fn infer_bool<'src, 'old, 'new>(
 }
 
 fn infer_void<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
 ) -> &'new TypedExpr<'src, 'new> {
     TypedExpr::new(ctx, offset, ExprKind::Void, &TypeValue::Void)
 }
 
 fn infer_array_literal<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     elements: &Vec<&'old ParsedExpr<'src, 'old>>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
@@ -102,7 +102,7 @@ fn infer_array_literal<'src, 'old, 'new>(
 }
 
 fn infer_struct_literal<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     struct_name: &'src str,
     fields: &Vec<&'old ParsedExpr<'src, 'old>>,
@@ -140,7 +140,7 @@ fn infer_struct_literal<'src, 'old, 'new>(
 }
 
 fn infer_dot<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     struct_expr: &'old ParsedExpr<'src, 'old>,
     field_name: &'src str,
@@ -183,7 +183,7 @@ fn infer_dot<'src, 'old, 'new>(
 }
 
 fn infer_array_index<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     arr: &'old ParsedExpr<'src, 'old>,
     indices: &Vec<&'old ParsedExpr<'src, 'old>>,
@@ -224,7 +224,7 @@ fn infer_array_index<'src, 'old, 'new>(
 }
 
 fn infer_if<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     cond: &'old ParsedExpr<'src, 'old>,
     thenb: &'old ParsedExpr<'src, 'old>,
@@ -243,7 +243,7 @@ fn infer_if<'src, 'old, 'new>(
 }
 
 fn infer_unop<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     op: UnOp,
     inner: &'old ParsedExpr<'src, 'old>,
@@ -272,7 +272,7 @@ fn infer_unop<'src, 'old, 'new>(
 }
 
 fn infer_binop<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     left: &'old ParsedExpr<'src, 'old>,
     op: BinOp,
@@ -290,7 +290,7 @@ fn infer_binop<'src, 'old, 'new>(
 }
 
 fn infer_arith_binop<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     left: &'old ParsedExpr<'src, 'old>,
     op: BinOp,
@@ -308,7 +308,7 @@ fn infer_arith_binop<'src, 'old, 'new>(
 }
 
 fn infer_logic_binop<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     left: &'old ParsedExpr<'src, 'old>,
     op: BinOp,
@@ -325,7 +325,7 @@ fn infer_logic_binop<'src, 'old, 'new>(
 }
 
 fn infer_cmp_binop<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     left: &'old ParsedExpr<'src, 'old>,
     op: BinOp,

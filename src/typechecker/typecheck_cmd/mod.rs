@@ -32,7 +32,7 @@ pub(super) fn typecheck_cmd<'src, 'old, 'new>(
 }
 
 fn typecheck_show<'src, 'old, 'new>(
-    ctx: &TypecheckCtx<'src, 'new>,
+    ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     expr: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
@@ -112,19 +112,30 @@ fn typecheck_fn<'src, 'old, 'new>(
     return_type: &'old ParsedType<'src, 'old>,
     body: &Vec<&'old ParsedStmt<'src, 'old>>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
+    // check and bind all parameters into the function body scope
+    ctx.push_scope();
     let mut typed_params = Vec::new();
     for binding in params {
         let typed_param = typecheck_binding::typecheck_binding(ctx, binding)?;
         typed_params.push(typed_param);
+        let typed_lvalue = typed_param.value.lvalue;
+        let resolved_ty = typecheck_type::typevalue_of_type(ctx, typed_param.value.ty)?;
+        ctx.bind(typed_lvalue, resolved_ty);
     }
 
+    // construct ast node for return type
+    let typed_return_type = typecheck_type::typecheck_type(ctx, return_type)?;
+    let ret_tyval = typecheck_type::typevalue_of_type(ctx, return_type)?;
+
+    // check each statement in the body
     let mut typed_body = Vec::new();
     for stmt in body {
-        let typed_stmt = typecheck_stmt::typecheck_stmt(ctx, stmt)?;
+        let typed_stmt = typecheck_stmt::typecheck_stmt(ctx, stmt, ret_tyval)?;
         typed_body.push(typed_stmt);
     }
 
-    let typed_return_type = typecheck_type::typecheck_type(ctx, return_type)?;
+    // goodbye function body scope
+    ctx.pop_scope();
 
     Ok(TypedCmd::new(
         ctx,
