@@ -16,7 +16,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::Int(val) => Ok(infer_int(ctx, loc, *val)),
         ExprKind::Float(val) => Ok(infer_float(ctx, loc, *val)),
         ExprKind::Bool(val) => Ok(infer_bool(ctx, loc, *val)),
-        ExprKind::Var(_) => todo!(),
+        ExprKind::Var(name) => infer_name(ctx, loc, name),
         ExprKind::Void => Ok(infer_void(ctx, loc)),
         ExprKind::ArrayLiteral(elements) => infer_array_literal(ctx, loc, elements),
         ExprKind::StructLiteral(name, fields) => infer_struct_literal(ctx, loc, name, fields),
@@ -53,6 +53,28 @@ fn infer_bool<'src, 'old, 'new>(
     val: bool,
 ) -> &'new TypedExpr<'src, 'new> {
     TypedExpr::new(ctx, offset, ExprKind::Bool(val), &TypeValue::Bool)
+}
+
+fn infer_name<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
+    offset: usize,
+    name: &'src str,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    let Some(info) = ctx.lookup(name) else {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::UnknownIdentifier(name),
+        });
+    };
+
+    let NameInfo::Value(ty) = info else {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::UnknownValue(name),
+        });
+    };
+
+    Ok(TypedExpr::new(ctx, offset, ExprKind::Var(name), ty))
 }
 
 fn infer_void<'src, 'old, 'new>(

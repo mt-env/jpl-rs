@@ -114,6 +114,7 @@ pub enum TypeErrorKind<'src, 'ast> {
     EmptyArrayLiteral,
     UnknownIdentifier(&'src str),
     UnknownStruct(&'src str),
+    UnknownValue(&'src str),
     StructFieldCountMismatch {
         struct_name: &'src str,
         expected: usize,
