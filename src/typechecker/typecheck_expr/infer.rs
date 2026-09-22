@@ -24,7 +24,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::ArrayIndex(arr, indices) => infer_array_index(ctx, loc, arr, indices),
         ExprKind::Call(_, _) => todo!(),
         ExprKind::If(cond, thenb, elseb) => infer_if(ctx, loc, cond, thenb, elseb),
-        ExprKind::ArrayLoop(_, _) => todo!(),
+        ExprKind::ArrayLoop(bindings, body) => infer_array_loop(ctx, loc, bindings, body),
         ExprKind::SumLoop(_, _) => todo!(),
         ExprKind::Unary(op, inner) => infer_unop(ctx, loc, *op, inner),
         ExprKind::Binary(left, op, right) => infer_binop(ctx, loc, left, *op, right),
@@ -239,6 +239,36 @@ fn infer_if<'src, 'old, 'new>(
         offset,
         ExprKind::If(typed_cond, typed_thenb, typed_elseb),
         ternary_type,
+    ))
+}
+
+fn infer_array_loop<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
+    offset: usize,
+    bindings: &Vec<(&'src str, &'old ParsedExpr<'src, 'old>)>,
+    body: &'old ParsedExpr<'src, 'old>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    ctx.push_scope();
+
+    // each binding must be an int, and is then added to the scope
+    let mut typed_bindings = Vec::new();
+    for binding in bindings.iter() {
+        typed_bindings.push((
+            binding.0,
+            typecheck_expr::check(ctx, binding.1, &TypeValue::Int)?,
+        ));
+        ctx.bind(binding.0, &TypeValue::Int);
+    }
+
+    let typed_body = infer(ctx, body)?;
+
+    ctx.pop_scope();
+
+    Ok(TypedExpr::new(
+        ctx,
+        offset,
+        ExprKind::ArrayLoop(typed_bindings, typed_body),
+        typed_body.value.ann,
     ))
 }
 
