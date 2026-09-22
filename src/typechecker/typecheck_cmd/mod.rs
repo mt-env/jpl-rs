@@ -1,10 +1,12 @@
 use crate::{
-    parser::ast::{Cmd, ParsedBinding, ParsedCmd, ParsedExpr, ParsedStmt, ParsedType},
+    parser::ast::{
+        Cmd, ParsedBinding, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt, ParsedType,
+    },
     typechecker::{
         ast::{TypeError, TypedCmd},
         typecheck_binding,
         typecheck_ctx::TypecheckCtx,
-        typecheck_expr, typecheck_stmt, typecheck_type,
+        typecheck_expr, typecheck_lvalue, typecheck_stmt, typecheck_type,
     },
 };
 
@@ -18,7 +20,7 @@ pub(super) fn typecheck_cmd<'src, 'old, 'new>(
         Cmd::Struct { name, fields } => typecheck_struct(ctx, loc, name, fields),
         Cmd::Read(name, lvalue) => todo!(),
         Cmd::Write(expr, name) => typecheck_write(ctx, loc, expr, name),
-        Cmd::Let(lvalue, expr) => todo!(),
+        Cmd::Let(lvalue, expr) => typecheck_let(ctx, loc, lvalue, expr),
         Cmd::Assert(expr, string) => typecheck_assert(ctx, loc, expr, string),
         Cmd::Print(string) => typecheck_print(ctx, loc, string),
         Cmd::Time(cmd) => typecheck_time(ctx, loc, cmd),
@@ -77,6 +79,22 @@ fn typecheck_write<'src, 'old, 'new>(
     Ok(TypedCmd::new(ctx, offset, Cmd::Write(typed_expr, name)))
 }
 
+fn typecheck_let<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
+    offset: usize,
+    lvalue: &'old ParsedLValue<'src>,
+    expr: &'old ParsedExpr<'src, 'old>,
+) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
+    let typed_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue)?;
+    let typed_expr = typecheck_expr::infer(ctx, expr)?;
+    typecheck_lvalue::bind_lvalue(ctx, typed_lvalue, typed_expr.value.ann);
+    Ok(TypedCmd::new(
+        ctx,
+        offset,
+        Cmd::Let(typed_lvalue, typed_expr),
+    ))
+}
+
 fn typecheck_assert<'src, 'old, 'new>(
     ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
@@ -120,7 +138,7 @@ fn typecheck_fn<'src, 'old, 'new>(
         typed_params.push(typed_param);
         let typed_lvalue = typed_param.value.lvalue;
         let resolved_ty = typecheck_type::typevalue_of_type(ctx, typed_param.value.ty)?;
-        ctx.bind(typed_lvalue, resolved_ty);
+        typecheck_lvalue::bind_lvalue(ctx, typed_lvalue, resolved_ty)?;
     }
 
     // construct ast node for return type

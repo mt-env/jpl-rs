@@ -29,7 +29,7 @@ fn typecheck_let<'src, 'old, 'new>(
     let resolved_expr = typecheck_expr::infer(ctx, expr)?;
     let resolved_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue)?;
     let expr_tyval = resolved_expr.value.ann;
-    ctx.bind(resolved_lvalue, expr_tyval);
+    typecheck_lvalue::bind_lvalue(ctx, resolved_lvalue, expr_tyval);
     Ok(TypedStmt::new(
         ctx,
         offset,
