@@ -128,6 +128,13 @@ pub enum TypeErrorKind<'src, 'ast> {
         expected: usize,
         actual: usize,
     },
+    ArrayLValueOnNonArray {
+        rhs: &'ast TypeValue<'src, 'ast>,
+    },
+    ArrayLValueDimensionMismatch {
+        expected: usize,
+        actual: usize,
+    },
 }
 
 impl<'src, 'ast> TypeValue<'src, 'ast> {
