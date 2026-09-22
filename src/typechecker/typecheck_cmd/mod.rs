@@ -3,7 +3,7 @@ use crate::{
         Cmd, ParsedBinding, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt, ParsedType,
     },
     typechecker::{
-        ast::{TypeError, TypedCmd},
+        ast::{TypeError, TypeValue, TypedCmd},
         typecheck_binding,
         typecheck_ctx::TypecheckCtx,
         typecheck_expr, typecheck_lvalue, typecheck_stmt, typecheck_type,
@@ -18,7 +18,7 @@ pub(super) fn typecheck_cmd<'src, 'old, 'new>(
     match &cmd.value {
         Cmd::Show(expr) => typecheck_show(ctx, loc, expr),
         Cmd::Struct { name, fields } => typecheck_struct(ctx, loc, name, fields),
-        Cmd::Read(name, lvalue) => todo!(),
+        Cmd::Read(name, lvalue) => typecheck_read(ctx, loc, name, lvalue),
         Cmd::Write(expr, name) => typecheck_write(ctx, loc, expr, name),
         Cmd::Let(lvalue, expr) => typecheck_let(ctx, loc, lvalue, expr),
         Cmd::Assert(expr, string) => typecheck_assert(ctx, loc, expr, string),
@@ -67,6 +67,24 @@ fn typecheck_struct<'src, 'old, 'new>(
             fields: typed_fields,
         },
     ))
+}
+
+fn typecheck_read<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
+    offset: usize,
+    name: &'src str,
+    lvalue: &'old ParsedLValue<'src>,
+) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
+    let typed_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue)?;
+    let rgba2d = TypeValue::new(
+        ctx,
+        TypeValue::Array {
+            element_type: TypeValue::new(ctx, TypeValue::Struct { name: "rgba" }),
+            dimension: 2,
+        },
+    );
+    typecheck_lvalue::bind_lvalue(ctx, typed_lvalue, rgba2d);
+    Ok(TypedCmd::new(ctx, offset, Cmd::Read(name, typed_lvalue)))
 }
 
 fn typecheck_write<'src, 'old, 'new>(
