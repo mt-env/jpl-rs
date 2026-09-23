@@ -70,6 +70,12 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
     }
 
     pub(super) fn lookup(&self, name: &'src str) -> Option<&'ast NameInfo<'src, 'ast>> {
+        for scope in self.local_scopes.iter().rev() {
+            if let Some(data) = scope.get(name) {
+                return Some(data);
+            }
+        }
+
         self.global_env.get(name).copied()
     }
 
