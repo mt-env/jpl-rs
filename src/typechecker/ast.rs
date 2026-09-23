@@ -1,6 +1,6 @@
 use crate::{
     Spanned,
-    parser::ast::{Binding, Cmd, Expr, ExprKind, LValue, Stmt, Type},
+    parser::ast::{Binding, Cmd, Expr, ExprKind, LValue, LoopIterVar, Stmt, StructField, Type},
     typechecker::typecheck_ctx::TypecheckCtx,
 };
 
@@ -26,6 +26,9 @@ pub type TypedLValue<'src> = Spanned<LValue<'src>>;
 pub type TypedType<'src, 'ast> = Spanned<Type<'src, 'ast>>;
 pub type TypedStmt<'src, 'ast> = Spanned<Stmt<'src, 'ast, &'ast TypeValue<'src, 'ast>>>;
 pub type TypedBinding<'src, 'ast> = Spanned<Binding<'src, 'ast>>;
+pub type TypedStructField<'src, 'ast> = Spanned<StructField<'src, 'ast>>;
+pub type TypedLoopIterVar<'src, 'ast> =
+    Spanned<LoopIterVar<'src, 'ast, &'ast TypeValue<'src, 'ast>>>;
 
 pub type TypeError<'src, 'ast> = Spanned<TypeErrorKind<'src, 'ast>>;
 
@@ -102,6 +105,32 @@ impl<'src, 'ast> TypedBinding<'src, 'ast> {
     }
 }
 
+impl<'src, 'ast> TypedStructField<'src, 'ast> {
+    pub(super) fn make_typed(
+        ctx: &TypecheckCtx<'src, 'ast>,
+        offset: usize,
+        struct_field: StructField<'src, 'ast>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned {
+            offset,
+            value: struct_field,
+        })
+    }
+}
+
+impl<'src, 'ast> TypedLoopIterVar<'src, 'ast> {
+    pub(super) fn new(
+        ctx: &TypecheckCtx<'src, 'ast>,
+        offset: usize,
+        iter_var: LoopIterVar<'src, 'ast, &'ast TypeValue<'src, 'ast>>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned {
+            offset,
+            value: iter_var,
+        })
+    }
+}
+
 pub enum TypeErrorKind<'src, 'ast> {
     ExpectType {
         expected: &'ast TypeValue<'src, 'ast>,
@@ -116,6 +145,7 @@ pub enum TypeErrorKind<'src, 'ast> {
     UnknownStruct(&'src str),
     UnknownValue(&'src str),
     UnknownFunction(&'src str),
+    DuplicateIdentifier(&'src str),
     StructFieldCountMismatch {
         struct_name: &'src str,
         expected: usize,

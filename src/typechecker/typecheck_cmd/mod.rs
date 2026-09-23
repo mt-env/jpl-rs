@@ -1,9 +1,10 @@
 use crate::{
     parser::ast::{
-        Cmd, ParsedBinding, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt, ParsedType,
+        Cmd, ParsedBinding, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt, ParsedStructField,
+        ParsedType, StructField,
     },
     typechecker::{
-        ast::{TypeError, TypeValue, TypedCmd},
+        ast::{TypeError, TypeValue, TypedCmd, TypedStructField},
         typecheck_binding,
         typecheck_ctx::TypecheckCtx,
         typecheck_expr, typecheck_lvalue, typecheck_stmt, typecheck_type,
@@ -46,17 +47,24 @@ fn typecheck_struct<'src, 'old, 'new>(
     ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     name: &'src str,
-    fields: &Vec<(&'src str, &'old ParsedType<'src, 'old>)>,
+    fields: &Vec<&'old ParsedStructField<'src, 'old>>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     let mut resolved_fields = Vec::new();
     let mut typed_fields = Vec::new();
     for field in fields {
         // resolve to a typevalue
-        let resolved_tyval = typecheck_type::typevalue_of_type(ctx, field.1)?;
-        resolved_fields.push((field.0, resolved_tyval));
+        let resolved_tyval = typecheck_type::typevalue_of_type(ctx, field.value.ty)?;
+        resolved_fields.push((field.value.name, resolved_tyval));
         // copy the field name and type into the new arena allocator
-        let field_type = typecheck_type::typecheck_type(ctx, field.1)?;
-        typed_fields.push((field.0, field_type));
+        let field_type = typecheck_type::typecheck_type(ctx, field.value.ty)?;
+        typed_fields.push(TypedStructField::make_typed(
+            ctx,
+            offset,
+            StructField {
+                name: field.value.name,
+                ty: field_type,
+            },
+        ));
     }
     ctx.add_struct_info(name, resolved_fields);
     Ok(TypedCmd::new(
@@ -83,7 +91,7 @@ fn typecheck_read<'src, 'old, 'new>(
             dimension: 2,
         },
     );
-    typecheck_lvalue::bind_lvalue(ctx, typed_lvalue, rgba2d);
+    typecheck_lvalue::bind_lvalue(ctx, typed_lvalue, rgba2d)?;
     Ok(TypedCmd::new(ctx, offset, Cmd::Read(name, typed_lvalue)))
 }
 
@@ -105,7 +113,7 @@ fn typecheck_let<'src, 'old, 'new>(
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     let typed_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue)?;
     let typed_expr = typecheck_expr::infer(ctx, expr)?;
-    typecheck_lvalue::bind_lvalue(ctx, typed_lvalue, typed_expr.value.ann);
+    typecheck_lvalue::bind_lvalue(ctx, typed_lvalue, typed_expr.value.ann)?;
     Ok(TypedCmd::new(
         ctx,
         offset,

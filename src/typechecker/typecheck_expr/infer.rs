@@ -1,7 +1,7 @@
 use crate::{
-    parser::ast::{BinOp, ExprKind, ParsedExpr, UnOp},
+    parser::ast::{BinOp, ExprKind, LoopIterVar, ParsedExpr, ParsedLoopIterVar, UnOp},
     typechecker::{
-        ast::{TypeError, TypeErrorKind, TypeValue, TypedExpr},
+        ast::{TypeError, TypeErrorKind, TypeValue, TypedExpr, TypedLoopIterVar},
         typecheck_ctx::{NameInfo, TypecheckCtx},
         typecheck_expr,
     },
@@ -330,7 +330,7 @@ fn infer_if<'src, 'old, 'new>(
 fn infer_array_loop<'src, 'old, 'new>(
     ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
-    bindings: &Vec<(&'src str, &'old ParsedExpr<'src, 'old>)>,
+    bindings: &Vec<&'old ParsedLoopIterVar<'src, 'old>>,
     body: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     infer_loop_expr(ctx, offset, bindings, body, ExprKind::ArrayLoop)
@@ -339,7 +339,7 @@ fn infer_array_loop<'src, 'old, 'new>(
 fn infer_sum_loop<'src, 'old, 'new>(
     ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
-    bindings: &Vec<(&'src str, &'old ParsedExpr<'src, 'old>)>,
+    bindings: &Vec<&'old ParsedLoopIterVar<'src, 'old>>,
     body: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     infer_loop_expr(ctx, offset, bindings, body, ExprKind::SumLoop)
@@ -348,10 +348,10 @@ fn infer_sum_loop<'src, 'old, 'new>(
 fn infer_loop_expr<'src, 'old, 'new>(
     ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
-    bindings: &Vec<(&'src str, &'old ParsedExpr<'src, 'old>)>,
+    bindings: &Vec<&'old ParsedLoopIterVar<'src, 'old>>,
     body: &'old ParsedExpr<'src, 'old>,
     make: impl Fn(
-        Vec<(&'src str, &'new TypedExpr<'src, 'new>)>,
+        Vec<&'new TypedLoopIterVar<'src, 'new>>,
         &'new TypedExpr<'src, 'new>,
     ) -> ExprKind<'src, 'new, &'new TypeValue<'src, 'new>>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
@@ -360,11 +360,16 @@ fn infer_loop_expr<'src, 'old, 'new>(
     // each binding must be an int, and is then added to the scope
     let mut typed_bindings = Vec::new();
     for binding in bindings.iter() {
-        typed_bindings.push((
-            binding.0,
-            typecheck_expr::check(ctx, binding.1, &TypeValue::Int)?,
+        let typed_expr = typecheck_expr::check(ctx, binding.value.expr, &TypeValue::Int)?;
+        typed_bindings.push(TypedLoopIterVar::new(
+            ctx,
+            offset,
+            LoopIterVar {
+                name: binding.value.name,
+                expr: typed_expr,
+            },
         ));
-        ctx.bind(binding.0, &TypeValue::Int);
+        ctx.bind(binding.offset, binding.value.name, &TypeValue::Int)?;
     }
 
     let typed_body = infer(ctx, body)?;

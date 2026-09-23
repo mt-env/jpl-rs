@@ -28,7 +28,7 @@ pub(super) fn bind_lvalue<'src, 'old, 'new>(
 ) -> Result<(), TypeError<'src, 'new>> {
     match &lvalue.value {
         LValue::Var(name) => {
-            ctx.bind(name, ty)?;
+            ctx.bind(lvalue.offset, name, ty)?;
             Ok(())
         }
         LValue::Array(name, dimensions) => {
@@ -52,9 +52,9 @@ pub(super) fn bind_lvalue<'src, 'old, 'new>(
             }
 
             // bind the array and all its dimensions
-            ctx.bind(name, ty)?;
+            ctx.bind(lvalue.offset, name, ty)?;
             for dim in dimensions {
-                ctx.bind(dim, &TypeValue::Int)?;
+                // ctx.bind(dim, &TypeValue::Int)?; // TODO source info here
             }
             Ok(())
         }
