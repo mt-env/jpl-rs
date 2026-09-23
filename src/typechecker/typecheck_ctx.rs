@@ -44,6 +44,45 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
         );
 
         current
+            .global_env
+            .insert("argnum", &NameInfo::Value(&TypeValue::Int));
+        current.global_env.insert(
+            "args",
+            &NameInfo::Value(&TypeValue::Array {
+                element_type: &TypeValue::Int,
+                dimension: 1,
+            }),
+        );
+
+        // f32 -> f32: sqrt, exp, sin, cos, tan, asin, acos, atan, and log
+        current.add_fn_info("sqrt", vec![&TypeValue::Float], &TypeValue::Float);
+        current.add_fn_info("exp", vec![&TypeValue::Float], &TypeValue::Float);
+        current.add_fn_info("sin", vec![&TypeValue::Float], &TypeValue::Float);
+        current.add_fn_info("cos", vec![&TypeValue::Float], &TypeValue::Float);
+        current.add_fn_info("tan", vec![&TypeValue::Float], &TypeValue::Float);
+        current.add_fn_info("asin", vec![&TypeValue::Float], &TypeValue::Float);
+        current.add_fn_info("acos", vec![&TypeValue::Float], &TypeValue::Float);
+        current.add_fn_info("atan", vec![&TypeValue::Float], &TypeValue::Float);
+        current.add_fn_info("log", vec![&TypeValue::Float], &TypeValue::Float);
+
+        // (f32, f32) -> f32: pow, atan2
+        current.add_fn_info(
+            "pow",
+            vec![&TypeValue::Float, &TypeValue::Float],
+            &TypeValue::Float,
+        );
+        current.add_fn_info(
+            "atan2",
+            vec![&TypeValue::Float, &TypeValue::Float],
+            &TypeValue::Float,
+        );
+
+        // i32 -> f32: to_float
+        current.add_fn_info("to_float", vec![&TypeValue::Int], &TypeValue::Float);
+        // f32 -> i32: to_int
+        current.add_fn_info("to_int", vec![&TypeValue::Float], &TypeValue::Int);
+
+        current
     }
 
     pub(super) fn alloc<A>(&self, value: A) -> &'ast A {
