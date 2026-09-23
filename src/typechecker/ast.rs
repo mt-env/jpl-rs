@@ -141,6 +141,8 @@ pub enum TypeErrorKind<'src, 'ast> {
         found: &'ast TypeValue<'src, 'ast>,
     },
     EmptyArrayLiteral,
+    EmptyArrayLoopBindings,
+    EmptySumLoopBindings,
     UnknownIdentifier(&'src str),
     UnknownStruct(&'src str),
     UnknownValue(&'src str),

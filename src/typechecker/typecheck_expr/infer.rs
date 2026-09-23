@@ -335,6 +335,14 @@ fn infer_array_loop<'src, 'old, 'new>(
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     ctx.push_scope();
 
+    // bindings must be nonempty
+    if bindings.is_empty() {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::EmptyArrayLoopBindings,
+        });
+    }
+
     // each binding must be an int, and is then added to the scope
     let mut typed_bindings = Vec::new();
     for binding in bindings.iter() {
@@ -377,6 +385,14 @@ fn infer_sum_loop<'src, 'old, 'new>(
     body: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     ctx.push_scope();
+
+    // bindings must be nonempty
+    if bindings.is_empty() {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::EmptySumLoopBindings,
+        });
+    }
 
     // each binding must be an int, and is then added to the scope
     let mut typed_bindings = Vec::new();
