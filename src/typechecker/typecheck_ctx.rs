@@ -2,11 +2,15 @@ use std::collections::HashMap;
 
 use bumpalo::Bump;
 
-use crate::typechecker::ast::TypeValue;
+use crate::typechecker::ast::{TypeError, TypeErrorKind, TypeValue, TypedBinding};
 
 pub(super) enum NameInfo<'src, 'ast> {
     Value(&'ast TypeValue<'src, 'ast>),
     Struct(Vec<(&'src str, &'ast TypeValue<'src, 'ast>)>),
+    Fn {
+        bindings: Vec<&'ast TypeValue<'src, 'ast>>,
+        ret_ty: &'ast TypeValue<'src, 'ast>,
+    },
 }
 
 impl<'src, 'ast> NameInfo<'src, 'ast> {
@@ -17,14 +21,16 @@ impl<'src, 'ast> NameInfo<'src, 'ast> {
 
 pub(super) struct TypecheckCtx<'src, 'ast> {
     alloc: &'ast Bump,
-    env: HashMap<&'src str, &'ast NameInfo<'src, 'ast>>,
+    global_env: HashMap<&'src str, &'ast NameInfo<'src, 'ast>>,
+    local_scopes: Vec<HashMap<&'src str, &'ast NameInfo<'src, 'ast>>>,
 }
 
 impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
     pub(super) fn new(alloc: &'ast Bump) -> Self {
         let mut current = Self {
             alloc,
-            env: HashMap::new(),
+            global_env: HashMap::new(),
+            local_scopes: Vec::new(),
         };
 
         current.add_struct_info(
@@ -49,11 +55,45 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
         name: &'src str,
         fields: Vec<(&'src str, &'ast TypeValue<'src, 'ast>)>,
     ) {
-        self.env
+        self.global_env
             .insert(name, NameInfo::new(self, NameInfo::Struct(fields)));
     }
 
+    pub(super) fn add_fn_info(
+        &mut self,
+        name: &'src str,
+        params: Vec<&'ast TypedBinding<'src, 'ast>>,
+        ret_ty: &'ast TypeValue<'src, 'ast>,
+    ) {
+        todo!()
+    }
+
     pub(super) fn lookup(&self, name: &'src str) -> Option<&'ast NameInfo<'src, 'ast>> {
-        self.env.get(name).copied()
+        self.global_env.get(name).copied()
+    }
+
+    pub(super) fn push_scope(&mut self) {
+        self.local_scopes.push(HashMap::new());
+    }
+
+    pub(super) fn pop_scope(&mut self) {
+        self.local_scopes.pop();
+    }
+
+    pub(super) fn bind(
+        &mut self,
+        offset: usize,
+        name: &'src str,
+        value: &'ast TypeValue<'src, 'ast>,
+    ) -> Result<(), TypeError<'src, 'ast>> {
+        let info = NameInfo::new(self, NameInfo::Value(value));
+        let curr_scope = self.local_scopes.last_mut().unwrap_or(&mut self.global_env);
+        if let Some(_) = curr_scope.insert(name, info) {
+            return Err(TypeError {
+                offset,
+                value: TypeErrorKind::DuplicateIdentifier(name),
+            });
+        }
+        Ok(())
     }
 }
