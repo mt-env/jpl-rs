@@ -274,7 +274,7 @@ fn infer_call<'src, 'old, 'new>(
     };
 
     // and is a function
-    let NameInfo::Fn { bindings, ret_ty } = info else {
+    let NameInfo::Fn { params, ret_ty } = info else {
         return Err(TypeError {
             offset,
             value: TypeErrorKind::UnknownFunction(name),
@@ -282,12 +282,12 @@ fn infer_call<'src, 'old, 'new>(
     };
 
     // and that we called with the right number of arguments
-    if bindings.len() != args.len() {
+    if params.len() != args.len() {
         return Err(TypeError {
             offset,
             value: TypeErrorKind::FunctionArgCountMismatch {
                 function_name: name,
-                expected: bindings.len(),
+                expected: params.len(),
                 actual: args.len(),
             },
         });
@@ -295,7 +295,7 @@ fn infer_call<'src, 'old, 'new>(
 
     // with the correct types
     let mut typed_args = Vec::new();
-    for (arg, expected_type) in args.iter().zip(bindings.iter()) {
+    for (arg, expected_type) in args.iter().zip(params.iter()) {
         let typed_arg = typecheck_expr::check(ctx, arg, expected_type)?;
         typed_args.push(typed_arg);
     }

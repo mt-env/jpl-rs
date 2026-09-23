@@ -159,17 +159,22 @@ fn typecheck_fn<'src, 'old, 'new>(
     // check and bind all parameters into the function body scope
     ctx.push_scope();
     let mut typed_params = Vec::new();
+    let mut param_types = Vec::new();
     for binding in params {
         let typed_param = typecheck_binding::typecheck_binding(ctx, binding)?;
         typed_params.push(typed_param);
         let typed_lvalue = typed_param.value.lvalue;
         let resolved_ty = typecheck_type::typevalue_of_type(ctx, typed_param.value.ty)?;
+        param_types.push(resolved_ty);
         typecheck_lvalue::bind_lvalue(ctx, typed_lvalue, resolved_ty)?;
     }
 
     // construct ast node for return type
     let typed_return_type = typecheck_type::typecheck_type(ctx, return_type)?;
     let ret_tyval = typecheck_type::typevalue_of_type(ctx, return_type)?;
+
+    // add fn info to global env - has to be done before checking body for recursion
+    ctx.add_fn_info(name, param_types, ret_tyval);
 
     // check each statement in the body
     let mut typed_body = Vec::new();

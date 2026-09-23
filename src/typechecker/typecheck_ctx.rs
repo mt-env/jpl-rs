@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use bumpalo::Bump;
 
-use crate::typechecker::ast::{TypeError, TypeErrorKind, TypeValue, TypedBinding};
+use crate::typechecker::ast::{TypeError, TypeErrorKind, TypeValue};
 
 pub(super) enum NameInfo<'src, 'ast> {
     Value(&'ast TypeValue<'src, 'ast>),
     Struct(Vec<(&'src str, &'ast TypeValue<'src, 'ast>)>),
     Fn {
-        bindings: Vec<&'ast TypeValue<'src, 'ast>>,
+        params: Vec<&'ast TypeValue<'src, 'ast>>,
         ret_ty: &'ast TypeValue<'src, 'ast>,
     },
 }
@@ -62,10 +62,11 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
     pub(super) fn add_fn_info(
         &mut self,
         name: &'src str,
-        params: Vec<&'ast TypedBinding<'src, 'ast>>,
+        params: Vec<&'ast TypeValue<'src, 'ast>>,
         ret_ty: &'ast TypeValue<'src, 'ast>,
     ) {
-        todo!()
+        let fn_info = NameInfo::new(self, NameInfo::Fn { params, ret_ty });
+        self.global_env.insert(name, &fn_info);
     }
 
     pub(super) fn lookup(&self, name: &'src str) -> Option<&'ast NameInfo<'src, 'ast>> {
