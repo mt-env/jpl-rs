@@ -22,7 +22,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::StructLiteral(name, fields) => infer_struct_literal(ctx, loc, name, fields),
         ExprKind::Dot(struct_expr, field) => infer_dot(ctx, loc, struct_expr, field),
         ExprKind::ArrayIndex(arr, indices) => infer_array_index(ctx, loc, arr, indices),
-        ExprKind::Call(_, _) => todo!(),
+        ExprKind::Call(name, args) => infer_call(ctx, loc, name, args),
         ExprKind::If(cond, thenb, elseb) => infer_if(ctx, loc, cond, thenb, elseb),
         ExprKind::ArrayLoop(bindings, body) => infer_array_loop(ctx, loc, bindings, body),
         ExprKind::SumLoop(bindings, body) => infer_sum_loop(ctx, loc, bindings, body),
@@ -256,6 +256,55 @@ fn infer_array_index<'src, 'old, 'new>(
         offset,
         ExprKind::ArrayIndex(typed_arr, ctx.alloc(typed_indices)),
         *element_type,
+    ))
+}
+
+fn infer_call<'src, 'old, 'new>(
+    ctx: &mut TypecheckCtx<'src, 'new>,
+    offset: usize,
+    name: &'src str,
+    args: &Vec<&'old ParsedExpr<'src, 'old>>,
+) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
+    // check identifier exists
+    let Some(info) = ctx.lookup(name) else {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::UnknownIdentifier(name),
+        });
+    };
+
+    // and is a function
+    let NameInfo::Fn { bindings, ret_ty } = info else {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::UnknownFunction(name),
+        });
+    };
+
+    // and that we called with the right number of arguments
+    if bindings.len() != args.len() {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::FunctionArgCountMismatch {
+                function_name: name,
+                expected: bindings.len(),
+                actual: args.len(),
+            },
+        });
+    }
+
+    // with the correct types
+    let mut typed_args = Vec::new();
+    for (arg, expected_type) in args.iter().zip(bindings.iter()) {
+        let typed_arg = typecheck_expr::check(ctx, arg, expected_type)?;
+        typed_args.push(typed_arg);
+    }
+
+    Ok(TypedExpr::new(
+        ctx,
+        offset,
+        ExprKind::Call(name, typed_args),
+        *ret_ty,
     ))
 }
 

@@ -115,8 +115,14 @@ pub enum TypeErrorKind<'src, 'ast> {
     UnknownIdentifier(&'src str),
     UnknownStruct(&'src str),
     UnknownValue(&'src str),
+    UnknownFunction(&'src str),
     StructFieldCountMismatch {
         struct_name: &'src str,
+        expected: usize,
+        actual: usize,
+    },
+    FunctionArgCountMismatch {
+        function_name: &'src str,
         expected: usize,
         actual: usize,
     },
