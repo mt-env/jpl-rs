@@ -3,7 +3,7 @@ use std::hint::unreachable_unchecked;
 use crate::{
     lexer::token::{Token, TokenKind},
     parser::{
-        ast::{Cmd, ParseError, ParsedCmd},
+        ast::{Cmd, ParseError, ParsedCmd, ParsedStructField, StructField},
         parse_binding, parse_expr, parse_lvalue, parse_stmt, parse_type,
         parser_ctx::ParserCtx,
     },
@@ -158,12 +158,21 @@ fn parse_struct<'src, 'ast>(
     let mut fields = Vec::new();
     while !ctx.peek_is(TokenKind::RCurly) {
         let Token {
-            str: field_name, ..
+            str: field_name,
+            offset,
+            ..
         } = ctx.expect(TokenKind::Variable)?;
         ctx.expect(TokenKind::Colon)?;
         let field_type = parse_type::parse_type(ctx)?;
         ctx.expect(TokenKind::NewLine)?;
-        fields.push((field_name, field_type));
+        fields.push(ParsedStructField::make_parsed(
+            ctx,
+            offset,
+            StructField {
+                name: field_name,
+                ty: field_type,
+            },
+        ));
     }
 
     ctx.expect(TokenKind::RCurly)?;

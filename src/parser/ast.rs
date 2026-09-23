@@ -7,6 +7,7 @@ pub type ParsedLValue<'src> = Spanned<LValue<'src>>;
 pub type ParsedType<'src, 'ast> = Spanned<Type<'src, 'ast>>;
 pub type ParsedStmt<'src, 'ast> = Spanned<Stmt<'src, 'ast, ()>>;
 pub type ParsedBinding<'src, 'ast> = Spanned<Binding<'src, 'ast>>;
+pub type ParsedStructField<'src, 'ast> = Spanned<StructField<'src, 'ast>>;
 
 pub enum Cmd<'src, 'ast, A> {
     Read(&'src str, &'ast Spanned<LValue<'src>>),
@@ -27,7 +28,7 @@ pub enum Cmd<'src, 'ast, A> {
     },
     Struct {
         name: &'src str,
-        fields: Vec<(&'src str, &'ast Spanned<Type<'src, 'ast>>)>,
+        fields: Vec<&'ast Spanned<StructField<'src, 'ast>>>,
     },
 }
 
@@ -199,6 +200,24 @@ impl<'src, 'ast> ParsedBinding<'src, 'ast> {
         ctx.alloc(Spanned {
             offset,
             value: binding,
+        })
+    }
+}
+
+pub struct StructField<'src, 'ast> {
+    pub name: &'src str,
+    pub ty: &'ast Spanned<Type<'src, 'ast>>,
+}
+
+impl<'src, 'ast> ParsedStructField<'src, 'ast> {
+    pub(super) fn make_parsed(
+        ctx: &ParserCtx<'src, 'ast>,
+        offset: usize,
+        field: StructField<'src, 'ast>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned {
+            offset,
+            value: field,
         })
     }
 }

@@ -40,7 +40,9 @@ impl std::fmt::Display for ParsedCmd<'_, '_> {
             }
             Cmd::Struct { name, fields } => {
                 write!(f, "(StructCmd {name}")?;
-                for (field_name, field_type) in fields {
+                for field in fields {
+                    let field_name = field.value.name;
+                    let field_type = field.value.ty;
                     write!(f, " {field_name} {field_type}")?;
                 }
                 write!(f, ")")
