@@ -8,6 +8,7 @@ pub type ParsedType<'src, 'ast> = Spanned<Type<'src, 'ast>>;
 pub type ParsedStmt<'src, 'ast> = Spanned<Stmt<'src, 'ast, ()>>;
 pub type ParsedBinding<'src, 'ast> = Spanned<Binding<'src, 'ast>>;
 pub type ParsedStructField<'src, 'ast> = Spanned<StructField<'src, 'ast>>;
+pub type ParsedLoopIterVar<'src, 'ast> = Spanned<LoopIterVar<'src, 'ast, ()>>;
 
 pub enum Cmd<'src, 'ast, A> {
     Read(&'src str, &'ast Spanned<LValue<'src>>),
@@ -67,12 +68,12 @@ pub enum ExprKind<'src, 'ast, A> {
         &'ast Spanned<Expr<'src, 'ast, A>>, // else
     ),
     ArrayLoop(
-        Vec<(&'src str, &'ast Spanned<Expr<'src, 'ast, A>>)>, // bindings
-        &'ast Spanned<Expr<'src, 'ast, A>>,                   // body
+        Vec<&'ast Spanned<LoopIterVar<'src, 'ast, A>>>, // bindings
+        &'ast Spanned<Expr<'src, 'ast, A>>,             // body
     ),
     SumLoop(
-        Vec<(&'src str, &'ast Spanned<Expr<'src, 'ast, A>>)>, // bindings
-        &'ast Spanned<Expr<'src, 'ast, A>>,                   // body
+        Vec<&'ast Spanned<LoopIterVar<'src, 'ast, A>>>, // bindings
+        &'ast Spanned<Expr<'src, 'ast, A>>,             // body
     ),
     Unary(UnOp, &'ast Spanned<Expr<'src, 'ast, A>>),
     Binary(
@@ -218,6 +219,24 @@ impl<'src, 'ast> ParsedStructField<'src, 'ast> {
         ctx.alloc(Spanned {
             offset,
             value: field,
+        })
+    }
+}
+
+pub struct LoopIterVar<'src, 'ast, A> {
+    pub name: &'src str,
+    pub expr: &'ast Spanned<Expr<'src, 'ast, A>>,
+}
+
+impl<'src, 'ast> ParsedLoopIterVar<'src, 'ast> {
+    pub(super) fn new(
+        ctx: &ParserCtx<'src, 'ast>,
+        offset: usize,
+        loop_iter_var: LoopIterVar<'src, 'ast, ()>,
+    ) -> &'ast Self {
+        ctx.alloc(Spanned {
+            offset,
+            value: loop_iter_var,
         })
     }
 }

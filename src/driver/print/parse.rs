@@ -97,14 +97,18 @@ impl std::fmt::Display for ParsedExpr<'_, '_> {
             ExprKind::If(cond, then_b, else_b) => write!(f, "(IfExpr {cond} {then_b} {else_b})"),
             ExprKind::ArrayLoop(loop_vars, body) => {
                 write!(f, "(ArrayLoopExpr")?;
-                for (var, range) in loop_vars {
+                for loop_var in loop_vars {
+                    let var = loop_var.value.name;
+                    let range = loop_var.value.expr;
                     write!(f, " {var} {range}")?;
                 }
                 write!(f, " {body})")
             }
             ExprKind::SumLoop(loop_vars, body) => {
                 write!(f, "(SumLoopExpr")?;
-                for (var, range) in loop_vars {
+                for loop_var in loop_vars {
+                    let var = loop_var.value.name;
+                    let range = loop_var.value.expr;
                     write!(f, " {var} {range}")?;
                 }
                 write!(f, " {body})")

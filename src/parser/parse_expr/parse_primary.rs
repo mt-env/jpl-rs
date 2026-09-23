@@ -4,7 +4,7 @@ use crate::{
     lexer::token::{Token, TokenKind},
     parser::{
         ParserCtx,
-        ast::{ExprKind, ParseError, ParseErrorKind, ParsedExpr},
+        ast::{ExprKind, LoopIterVar, ParseError, ParseErrorKind, ParsedExpr, ParsedLoopIterVar},
         parse_expr::parse_expr,
     },
 };
@@ -222,7 +222,7 @@ fn parse_loop_expr<'src, 'ast>(
     ctx: &mut ParserCtx<'src, 'ast>,
     offset: usize,
     constructor: impl Fn(
-        Vec<(&'src str, &'ast ParsedExpr<'src, 'ast>)>,
+        Vec<&'ast ParsedLoopIterVar<'src, 'ast>>,
         &'ast ParsedExpr<'src, 'ast>,
     ) -> ExprKind<'src, 'ast, ()>,
 ) -> Result<&'ast ParsedExpr<'src, 'ast>, ParseError<'src>> {
@@ -233,7 +233,14 @@ fn parse_loop_expr<'src, 'ast>(
             let Token { str: var_name, .. } = ctx.expect(TokenKind::Variable)?;
             ctx.expect(TokenKind::Colon)?;
             let expr = parse_expr(ctx)?;
-            bindings.push((var_name, expr));
+            bindings.push(ParsedLoopIterVar::new(
+                ctx,
+                offset,
+                LoopIterVar {
+                    name: var_name,
+                    expr,
+                },
+            ));
             if !ctx.peek_is(TokenKind::Comma) {
                 break;
             }
