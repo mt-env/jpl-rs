@@ -333,7 +333,41 @@ fn infer_array_loop<'src, 'old, 'new>(
     bindings: &Vec<&'old ParsedLoopIterVar<'src, 'old>>,
     body: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
-    infer_loop_expr(ctx, offset, bindings, body, ExprKind::ArrayLoop)
+    ctx.push_scope();
+
+    // each binding must be an int, and is then added to the scope
+    let mut typed_bindings = Vec::new();
+    for binding in bindings.iter() {
+        let typed_expr = typecheck_expr::check(ctx, binding.value.expr, &TypeValue::Int)?;
+        typed_bindings.push(TypedLoopIterVar::new(
+            ctx,
+            offset,
+            LoopIterVar {
+                name: binding.value.name,
+                expr: typed_expr,
+            },
+        ));
+        ctx.bind(binding.offset, binding.value.name, &TypeValue::Int)?;
+    }
+
+    let typed_body = infer(ctx, body)?;
+
+    ctx.pop_scope();
+
+    let arr_type = TypeValue::new(
+        ctx,
+        TypeValue::Array {
+            element_type: typed_body.value.ann,
+            dimension: bindings.len(),
+        },
+    );
+
+    Ok(TypedExpr::new(
+        ctx,
+        offset,
+        ExprKind::ArrayLoop(typed_bindings, typed_body),
+        arr_type,
+    ))
 }
 
 fn infer_sum_loop<'src, 'old, 'new>(
@@ -341,19 +375,6 @@ fn infer_sum_loop<'src, 'old, 'new>(
     offset: usize,
     bindings: &Vec<&'old ParsedLoopIterVar<'src, 'old>>,
     body: &'old ParsedExpr<'src, 'old>,
-) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
-    infer_loop_expr(ctx, offset, bindings, body, ExprKind::SumLoop)
-}
-
-fn infer_loop_expr<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
-    offset: usize,
-    bindings: &Vec<&'old ParsedLoopIterVar<'src, 'old>>,
-    body: &'old ParsedExpr<'src, 'old>,
-    make: impl Fn(
-        Vec<&'new TypedLoopIterVar<'src, 'new>>,
-        &'new TypedExpr<'src, 'new>,
-    ) -> ExprKind<'src, 'new, &'new TypeValue<'src, 'new>>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     ctx.push_scope();
 
@@ -379,7 +400,7 @@ fn infer_loop_expr<'src, 'old, 'new>(
     Ok(TypedExpr::new(
         ctx,
         offset,
-        make(typed_bindings, typed_body),
+        ExprKind::SumLoop(typed_bindings, typed_body),
         typed_body.value.ann,
     ))
 }
