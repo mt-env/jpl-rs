@@ -33,8 +33,38 @@ pub fn print_type_error(
                 "Type error at line {line}, column {column}: Empty array literal is not allowed",
             );
         }
+        TypeErrorKind::EmptyArrayLoopBindings => {
+            println!(
+                "Type error at line {line}, column {column}: Empty array loop bindings are not allowed",
+            );
+        }
+        TypeErrorKind::EmptySumLoopBindings => {
+            println!(
+                "Type error at line {line}, column {column}: Empty sum loop bindings are not allowed",
+            );
+        }
+        TypeErrorKind::UnknownIdentifier(name) => {
+            println!("Type error at line {line}, column {column}: Unknown identifier '{name}'");
+        }
         TypeErrorKind::UnknownStruct(name) => {
             println!("Type error at line {line}, column {column}: Unknown struct '{name}'");
+        }
+        TypeErrorKind::UnknownValue(name) => {
+            println!("Type error at line {line}, column {column}: Unknown value '{name}'");
+        }
+        TypeErrorKind::UnknownFunction(name) => {
+            println!("Type error at line {line}, column {column}: Unknown function '{name}'");
+        }
+        TypeErrorKind::DuplicateIdentifier(name) => {
+            println!("Type error at line {line}, column {column}: Duplicate identifier '{name}'");
+        }
+        TypeErrorKind::DuplicateStructField {
+            struct_name,
+            field_name,
+        } => {
+            println!(
+                "Type error at line {line}, column {column}: Struct '{struct_name}' has duplicate field '{field_name}'",
+            );
         }
         TypeErrorKind::StructFieldCountMismatch {
             struct_name,
@@ -43,6 +73,15 @@ pub fn print_type_error(
         } => {
             println!(
                 "Type error at line {line}, column {column}: Struct '{struct_name}' expects {expected} fields, but found {actual}",
+            );
+        }
+        TypeErrorKind::FunctionArgCountMismatch {
+            function_name,
+            expected,
+            actual,
+        } => {
+            println!(
+                "Type error at line {line}, column {column}: Function '{function_name}' expects {expected} arguments, but found {actual}",
             );
         }
         TypeErrorKind::DotOnNonStruct => {
@@ -66,6 +105,24 @@ pub fn print_type_error(
         TypeErrorKind::ArrayIndexDimensionMismatch { expected, actual } => {
             println!(
                 "Type error at line {line}, column {column}: Array index dimension mismatch: expected {expected}, found {actual}",
+            );
+        }
+        TypeErrorKind::ArrayLValueOnNonArray { rhs } => {
+            println!(
+                "Type error at line {line}, column {column}: Array lvalue used on a non-array type: found type '{rhs}'",
+            );
+        }
+        TypeErrorKind::ArrayLValueDimensionMismatch { expected, actual } => {
+            println!(
+                "Type error at line {line}, column {column}: Array lvalue dimension mismatch: expected {expected}, found {actual}",
+            );
+        }
+        TypeErrorKind::MissingReturn {
+            fn_name,
+            return_type,
+        } => {
+            println!(
+                "Type error at line {line}, column {column}: Function '{fn_name}' is missing a return statement for return type '{return_type}'",
             );
         }
     }
