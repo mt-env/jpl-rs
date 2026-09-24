@@ -43,7 +43,10 @@ pub fn run() -> ExitCode {
     };
 
     if mode == Some(Mode::Lex) {
-        print::lex::print_tokens(tokens);
+        if print::lex::print_tokens(tokens).is_err() {
+            println!("Compilation failed: could not print tokens");
+            return ExitCode::from(1);
+        }
         println!("Compilation succeeded: lexical analysis complete");
         return ExitCode::from(0);
     }
@@ -59,7 +62,10 @@ pub fn run() -> ExitCode {
     };
 
     if mode == Some(Mode::Parse) {
-        print::parse::print_sexp(parsed_program);
+        if print::parse::print_sexp(parsed_program).is_err() {
+            println!("Compilation failed: could not print parsed AST");
+            return ExitCode::from(1);
+        }
         println!("Compilation succeeded: parsing complete");
         return ExitCode::from(0);
     }
@@ -75,7 +81,10 @@ pub fn run() -> ExitCode {
     };
 
     if mode == Some(Mode::Typecheck) {
-        print::typecheck::print_typed_program(typed_program);
+        if print::typecheck::print_typed_program(typed_program).is_err() {
+            println!("Compilation failed: could not print typed AST");
+            return ExitCode::from(1);
+        }
         println!("Compilation succeeded: typechecking complete");
         return ExitCode::from(0);
     }

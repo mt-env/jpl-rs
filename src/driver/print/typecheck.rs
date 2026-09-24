@@ -1,12 +1,19 @@
+use std::io::{self, BufWriter, Write};
+
 use crate::{
     parser::ast::{Cmd, ExprKind, Stmt},
     typechecker::ast::{TypeValue, TypedCmd, TypedExpr, TypedProgram, TypedStmt},
 };
 
-pub fn print_typed_program(program: TypedProgram) {
+pub fn print_typed_program(program: TypedProgram) -> io::Result<()> {
+    let stdout = io::stdout();
+    let handle = stdout.lock();
+    let mut writer = BufWriter::new(handle);
     for cmd in program {
-        println!("{cmd}");
+        writeln!(writer, "{cmd}")?;
     }
+    writer.flush()?;
+    Ok(())
 }
 
 impl std::fmt::Display for TypedCmd<'_, '_> {

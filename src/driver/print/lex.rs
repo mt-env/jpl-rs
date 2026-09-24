@@ -1,11 +1,19 @@
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    io::{self, BufWriter, Write},
+};
 
 use crate::lexer::token::{Token, TokenKind};
 
-pub fn print_tokens(tokens: Vec<Token>) {
+pub fn print_tokens(tokens: Vec<Token>) -> io::Result<()> {
+    let stdout = io::stdout();
+    let handle = stdout.lock();
+    let mut writer = BufWriter::new(handle);
     for token in tokens {
-        println!("{token}");
+        writeln!(writer, "{token}")?;
     }
+    writer.flush()?;
+    Ok(())
 }
 
 impl Display for Token<'_> {
