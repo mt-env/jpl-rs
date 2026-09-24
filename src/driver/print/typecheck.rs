@@ -64,7 +64,7 @@ impl std::fmt::Display for TypedExpr<'_, '_> {
                     write!(f, "(FalseExpr {ty_value})")
                 }
             }
-            ExprKind::Var(var) => todo!(),
+            ExprKind::Var(var) => write!(f, "(VarExpr {ty_value} {var})"),
             ExprKind::Void => write!(f, "(VoidExpr {ty_value})"),
             ExprKind::ArrayLiteral(arr) => {
                 write!(f, "(ArrayLiteralExpr {ty_value}")?;
@@ -88,12 +88,34 @@ impl std::fmt::Display for TypedExpr<'_, '_> {
                 }
                 write!(f, ")")
             }
-            ExprKind::Call(name, args) => todo!(),
+            ExprKind::Call(name, args) => {
+                write!(f, "(CallExpr {ty_value} {name}")?;
+                for arg in args {
+                    write!(f, " {arg}")?;
+                }
+                write!(f, ")")
+            }
             ExprKind::If(cond, then_b, else_b) => {
                 write!(f, "(IfExpr {ty_value} {cond} {then_b} {else_b})")
             }
-            ExprKind::ArrayLoop(loop_vars, body) => todo!(),
-            ExprKind::SumLoop(loop_vars, body) => todo!(),
+            ExprKind::ArrayLoop(loop_vars, body) => {
+                write!(f, "(ArrayLoopExpr {ty_value}")?;
+                for loop_var in loop_vars {
+                    let var = loop_var.value.name;
+                    let range = loop_var.value.expr;
+                    write!(f, " {var} {range}")?;
+                }
+                write!(f, " {body})")
+            }
+            ExprKind::SumLoop(loop_vars, body) => {
+                write!(f, "(SumLoopExpr {ty_value}")?;
+                for loop_var in loop_vars {
+                    let var = loop_var.value.name;
+                    let range = loop_var.value.expr;
+                    write!(f, " {var} {range}")?;
+                }
+                write!(f, " {body})")
+            }
             ExprKind::Unary(op, expr) => write!(f, "(UnopExpr {ty_value} {op} {expr})"),
             ExprKind::Binary(left, op, right) => {
                 write!(f, "(BinopExpr {ty_value} {left} {op} {right})")
