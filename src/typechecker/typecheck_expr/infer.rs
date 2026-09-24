@@ -16,7 +16,7 @@ pub(super) fn infer<'src, 'old, 'new>(
         ExprKind::Int(val) => Ok(infer_int(ctx, loc, *val)),
         ExprKind::Float(val) => Ok(infer_float(ctx, loc, *val)),
         ExprKind::Bool(val) => Ok(infer_bool(ctx, loc, *val)),
-        ExprKind::Var(name) => infer_name(ctx, loc, name),
+        ExprKind::Var(name) => infer_var(ctx, loc, name),
         ExprKind::Void => Ok(infer_void(ctx, loc)),
         ExprKind::ArrayLiteral(elements) => infer_array_literal(ctx, loc, elements),
         ExprKind::StructLiteral(name, fields) => infer_struct_literal(ctx, loc, name, fields),
@@ -31,32 +31,32 @@ pub(super) fn infer<'src, 'old, 'new>(
     }
 }
 
-fn infer_int<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
+fn infer_int<'src, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
     offset: usize,
     val: i64,
 ) -> &'new TypedExpr<'src, 'new> {
     TypedExpr::new(ctx, offset, ExprKind::Int(val), &TypeValue::Int)
 }
 
-fn infer_float<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
+fn infer_float<'src, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
     offset: usize,
     val: f64,
 ) -> &'new TypedExpr<'src, 'new> {
     TypedExpr::new(ctx, offset, ExprKind::Float(val), &TypeValue::Float)
 }
 
-fn infer_bool<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
+fn infer_bool<'src, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
     offset: usize,
     val: bool,
 ) -> &'new TypedExpr<'src, 'new> {
     TypedExpr::new(ctx, offset, ExprKind::Bool(val), &TypeValue::Bool)
 }
 
-fn infer_name<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
+fn infer_var<'src, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
     offset: usize,
     name: &'src str,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
@@ -77,8 +77,8 @@ fn infer_name<'src, 'old, 'new>(
     Ok(TypedExpr::new(ctx, offset, ExprKind::Var(name), ty))
 }
 
-fn infer_void<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
+fn infer_void<'src, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
     offset: usize,
 ) -> &'new TypedExpr<'src, 'new> {
     TypedExpr::new(ctx, offset, ExprKind::Void, &TypeValue::Void)
@@ -90,7 +90,7 @@ fn infer_array_literal<'src, 'old, 'new>(
     elements: &Vec<&'old ParsedExpr<'src, 'old>>,
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     let mut typed_exprs = Vec::new();
-    let mut parsed_exprs = elements.into_iter();
+    let mut parsed_exprs = elements.iter();
 
     // empty array is a type error
     let Some(first_element) = parsed_exprs.next() else {
@@ -104,7 +104,7 @@ fn infer_array_literal<'src, 'old, 'new>(
     let typed_first_element = infer(ctx, first_element)?;
     let element_type = typed_first_element.value.ann;
     typed_exprs.push(typed_first_element);
-    while let Some(element) = parsed_exprs.next() {
+    for element in parsed_exprs {
         typed_exprs.push(typecheck_expr::check(ctx, element, element_type)?);
     }
 
@@ -198,7 +198,7 @@ fn infer_dot<'src, 'old, 'new>(
     };
 
     // find field
-    for (field, field_type) in struct_def.iter() {
+    for (field, field_type) in struct_def {
         if *field == field_name {
             return Ok(TypedExpr::new(
                 ctx,
@@ -247,7 +247,7 @@ fn infer_array_index<'src, 'old, 'new>(
     }
 
     let mut typed_indices = Vec::new();
-    for index in indices.iter() {
+    for index in indices {
         typed_indices.push(typecheck_expr::check(ctx, index, &TypeValue::Int)?);
     }
 
@@ -255,7 +255,7 @@ fn infer_array_index<'src, 'old, 'new>(
         ctx,
         offset,
         ExprKind::ArrayIndex(typed_arr, ctx.alloc(typed_indices)),
-        *element_type,
+        element_type,
     ))
 }
 
@@ -304,7 +304,7 @@ fn infer_call<'src, 'old, 'new>(
         ctx,
         offset,
         ExprKind::Call(name, typed_args),
-        *ret_ty,
+        ret_ty,
     ))
 }
 
@@ -345,7 +345,7 @@ fn infer_array_loop<'src, 'old, 'new>(
 
     // each binding must be an int
     let mut typed_bindings = Vec::new();
-    for binding in bindings.iter() {
+    for binding in bindings {
         let typed_expr = typecheck_expr::check(ctx, binding.value.expr, &TypeValue::Int)?;
         typed_bindings.push(TypedLoopIterVar::new(
             ctx,
@@ -402,7 +402,7 @@ fn infer_sum_loop<'src, 'old, 'new>(
 
     // each binding must be an int
     let mut typed_bindings = Vec::new();
-    for binding in bindings.iter() {
+    for binding in bindings {
         let typed_expr = typecheck_expr::check(ctx, binding.value.expr, &TypeValue::Int)?;
         typed_bindings.push(TypedLoopIterVar::new(
             ctx,

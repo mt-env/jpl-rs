@@ -14,7 +14,7 @@ pub(super) enum NameInfo<'src, 'ast> {
 }
 
 impl<'src, 'ast> NameInfo<'src, 'ast> {
-    pub(super) fn new(ctx: &TypecheckCtx<'src, 'ast>, info: NameInfo<'src, 'ast>) -> &'ast Self {
+    pub(super) fn new(ctx: &TypecheckCtx<'src, 'ast>, info: Self) -> &'ast Self {
         ctx.alloc(info)
     }
 }
@@ -55,53 +55,53 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
         );
 
         // f32 -> f32: sqrt, exp, sin, cos, tan, asin, acos, atan, and log
-        let f32_f32 = NameInfo::new(
+        let float_to_float = NameInfo::new(
             &current,
             NameInfo::Fn {
                 params: vec![&TypeValue::Float],
                 ret_ty: &TypeValue::Float,
             },
         );
-        current.global_env.insert("sqrt", f32_f32);
-        current.global_env.insert("exp", f32_f32);
-        current.global_env.insert("sin", f32_f32);
-        current.global_env.insert("cos", f32_f32);
-        current.global_env.insert("tan", f32_f32);
-        current.global_env.insert("asin", f32_f32);
-        current.global_env.insert("acos", f32_f32);
-        current.global_env.insert("atan", f32_f32);
-        current.global_env.insert("log", f32_f32);
+        current.global_env.insert("sqrt", float_to_float);
+        current.global_env.insert("exp", float_to_float);
+        current.global_env.insert("sin", float_to_float);
+        current.global_env.insert("cos", float_to_float);
+        current.global_env.insert("tan", float_to_float);
+        current.global_env.insert("asin", float_to_float);
+        current.global_env.insert("acos", float_to_float);
+        current.global_env.insert("atan", float_to_float);
+        current.global_env.insert("log", float_to_float);
 
         // (f32, f32) -> f32: pow, atan2
-        let f32_f32_f32 = NameInfo::new(
+        let float_float_to_float = NameInfo::new(
             &current,
             NameInfo::Fn {
                 params: vec![&TypeValue::Float, &TypeValue::Float],
                 ret_ty: &TypeValue::Float,
             },
         );
-        current.global_env.insert("pow", f32_f32_f32);
-        current.global_env.insert("atan2", f32_f32_f32);
+        current.global_env.insert("pow", float_float_to_float);
+        current.global_env.insert("atan2", float_float_to_float);
 
         // i32 -> f32: to_float
-        let i32_f32 = NameInfo::new(
+        let int_to_float = NameInfo::new(
             &current,
             NameInfo::Fn {
                 params: vec![&TypeValue::Int],
                 ret_ty: &TypeValue::Float,
             },
         );
-        current.global_env.insert("to_float", i32_f32);
+        current.global_env.insert("to_float", int_to_float);
 
         // f32 -> i32: to_int
-        let f32_i32 = NameInfo::new(
+        let float_to_int = NameInfo::new(
             &current,
             NameInfo::Fn {
                 params: vec![&TypeValue::Float],
                 ret_ty: &TypeValue::Int,
             },
         );
-        current.global_env.insert("to_int", f32_i32);
+        current.global_env.insert("to_int", float_to_int);
 
         current
     }
@@ -126,7 +126,7 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
         ret_ty: &'ast TypeValue<'src, 'ast>,
     ) -> Result<(), TypeError<'src, 'ast>> {
         let fn_info = NameInfo::new(self, NameInfo::Fn { params, ret_ty });
-        if let Some(_) = self.global_env.insert(name, &fn_info) {
+        if self.global_env.insert(name, fn_info).is_some() {
             return Err(TypeError {
                 offset: 0,
                 value: TypeErrorKind::DuplicateIdentifier(name),
@@ -161,7 +161,7 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
     ) -> Result<(), TypeError<'src, 'ast>> {
         let info = NameInfo::new(self, NameInfo::Value(value));
         let curr_scope = self.local_scopes.last_mut().unwrap_or(&mut self.global_env);
-        if let Some(_) = curr_scope.insert(name, info) {
+        if curr_scope.insert(name, info).is_some() {
             return Err(TypeError {
                 offset,
                 value: TypeErrorKind::DuplicateIdentifier(name),

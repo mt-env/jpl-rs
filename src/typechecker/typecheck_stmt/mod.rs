@@ -27,7 +27,7 @@ fn typecheck_let<'src, 'old, 'new>(
     expr: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedStmt<'src, 'new>, TypeError<'src, 'new>> {
     let resolved_expr = typecheck_expr::infer(ctx, expr)?;
-    let resolved_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue)?;
+    let resolved_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue);
     let expr_tyval = resolved_expr.value.ann;
     typecheck_lvalue::bind_lvalue(ctx, resolved_lvalue, expr_tyval)?;
     Ok(TypedStmt::new(

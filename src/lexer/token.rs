@@ -7,7 +7,7 @@ pub struct Token<'a> {
     pub str: &'a str,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum TokenKind {
     // primitive values
     True,

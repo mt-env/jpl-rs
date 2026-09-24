@@ -48,7 +48,7 @@ pub(super) fn typevalue_of_type<'src, 'old, 'new>(
             let element_typevalue = typevalue_of_type(ctx, element_type)?;
             TypeValue::Array {
                 element_type: element_typevalue,
-                dimension: dimension,
+                dimension,
             }
         }
         Type::Struct { name } => {

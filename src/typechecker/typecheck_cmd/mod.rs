@@ -23,7 +23,7 @@ pub(super) fn typecheck_cmd<'src, 'old, 'new>(
         Cmd::Write(expr, name) => typecheck_write(ctx, loc, expr, name),
         Cmd::Let(lvalue, expr) => typecheck_let(ctx, loc, lvalue, expr),
         Cmd::Assert(expr, string) => typecheck_assert(ctx, loc, expr, string),
-        Cmd::Print(string) => typecheck_print(ctx, loc, string),
+        Cmd::Print(string) => Ok(typecheck_print(ctx, loc, string)),
         Cmd::Time(cmd) => typecheck_time(ctx, loc, cmd),
         Cmd::Fn {
             name,
@@ -89,13 +89,13 @@ fn typecheck_struct<'src, 'old, 'new>(
     ))
 }
 
-fn typecheck_read<'src, 'old, 'new>(
+fn typecheck_read<'src, 'new>(
     ctx: &mut TypecheckCtx<'src, 'new>,
     offset: usize,
     name: &'src str,
-    lvalue: &'old ParsedLValue<'src>,
+    lvalue: &ParsedLValue<'src>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
-    let typed_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue)?;
+    let typed_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue);
     let rgba2d = TypeValue::new(
         ctx,
         TypeValue::Array {
@@ -130,7 +130,7 @@ fn typecheck_let<'src, 'old, 'new>(
     lvalue: &'old ParsedLValue<'src>,
     expr: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
-    let typed_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue)?;
+    let typed_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue);
     let typed_expr = typecheck_expr::infer(ctx, expr)?;
     typecheck_lvalue::bind_lvalue(ctx, typed_lvalue, typed_expr.value.ann)?;
     Ok(TypedCmd::new(
@@ -150,12 +150,12 @@ fn typecheck_assert<'src, 'old, 'new>(
     Ok(TypedCmd::new(ctx, offset, Cmd::Assert(typed_expr, msg)))
 }
 
-fn typecheck_print<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
+fn typecheck_print<'src, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
     offset: usize,
     msg: &'src str,
-) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
-    Ok(TypedCmd::new(ctx, offset, Cmd::Print(msg)))
+) -> &'new TypedCmd<'src, 'new> {
+    TypedCmd::new(ctx, offset, Cmd::Print(msg))
 }
 
 fn typecheck_time<'src, 'old, 'new>(

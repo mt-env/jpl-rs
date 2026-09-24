@@ -25,14 +25,6 @@ pub(super) fn infer<'src, 'old, 'new>(
     infer::infer(ctx, expr)
 }
 
-pub(super) fn check_many<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
-    expr: &'old ParsedExpr<'src, 'old>,
-    expected: &'new [&'new TypeValue<'src, 'new>],
-) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
-    check::check_many(ctx, expr, expected)
-}
-
 pub(super) fn check_num<'src, 'old, 'new>(
     ctx: &mut TypecheckCtx<'src, 'new>,
     expr: &'old ParsedExpr<'src, 'old>,

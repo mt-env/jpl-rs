@@ -12,7 +12,7 @@ pub(super) fn typecheck_binding<'src, 'old, 'new>(
     binding: &'old ParsedBinding<'src, 'old>,
 ) -> Result<&'new TypedBinding<'src, 'new>, TypeError<'src, 'new>> {
     let loc = binding.offset;
-    let typed_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, binding.value.lvalue)?;
+    let typed_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, binding.value.lvalue);
     let typed_type = typecheck_type::typecheck_type(ctx, binding.value.ty)?;
 
     Ok(TypedBinding::make_typed(

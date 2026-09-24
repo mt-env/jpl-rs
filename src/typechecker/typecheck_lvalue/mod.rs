@@ -6,22 +6,20 @@ use crate::{
     },
 };
 
-pub(super) fn typecheck_lvalue<'src, 'old, 'new>(
-    ctx: &mut TypecheckCtx<'src, 'new>,
-    lvalue: &'old ParsedLValue<'src>,
-) -> Result<&'new TypedLValue<'src>, TypeError<'src, 'new>> {
+pub(super) fn typecheck_lvalue<'src, 'new>(
+    ctx: &TypecheckCtx<'src, 'new>,
+    lvalue: &ParsedLValue<'src>,
+) -> &'new TypedLValue<'src> {
     let loc = lvalue.offset;
     match &lvalue.value {
-        LValue::Var(name) => Ok(TypedLValue::make_typed(ctx, loc, LValue::Var(name))),
-        LValue::Array(arr, dimensions) => Ok(TypedLValue::make_typed(
-            ctx,
-            loc,
-            LValue::Array(arr, dimensions.clone()),
-        )),
+        LValue::Var(name) => TypedLValue::make_typed(ctx, loc, LValue::Var(name)),
+        LValue::Array(arr, dimensions) => {
+            TypedLValue::make_typed(ctx, loc, LValue::Array(arr, dimensions.clone()))
+        }
     }
 }
 
-pub(super) fn bind_lvalue<'src, 'old, 'new>(
+pub(super) fn bind_lvalue<'src, 'new>(
     ctx: &mut TypecheckCtx<'src, 'new>,
     lvalue: &'new TypedLValue<'src>,
     ty: &'new TypeValue<'src, 'new>,

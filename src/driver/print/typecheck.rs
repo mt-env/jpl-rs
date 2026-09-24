@@ -83,7 +83,7 @@ impl std::fmt::Display for TypedExpr<'_, '_> {
             ExprKind::Dot(expr, field) => write!(f, "(DotExpr {ty_value} {expr} {field})"),
             ExprKind::ArrayIndex(expr, indices) => {
                 write!(f, "(ArrayIndexExpr {ty_value} {expr}")?;
-                for index in indices.iter() {
+                for index in *indices {
                     write!(f, " {index}")?;
                 }
                 write!(f, ")")

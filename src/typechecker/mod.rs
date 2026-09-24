@@ -24,7 +24,7 @@ pub fn typecheck<'src, 'old, 'new>(
     let mut typed_ast = Vec::new();
     let mut ctx = TypecheckCtx::new(alloc);
     for cmd in ast {
-        typed_ast.push(typecheck_cmd::typecheck_cmd(&mut ctx, cmd)?)
+        typed_ast.push(typecheck_cmd::typecheck_cmd(&mut ctx, cmd)?);
     }
     Ok(typed_ast)
 }
