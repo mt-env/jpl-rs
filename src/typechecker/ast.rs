@@ -148,6 +148,10 @@ pub enum TypeErrorKind<'src, 'ast> {
     UnknownValue(&'src str),
     UnknownFunction(&'src str),
     DuplicateIdentifier(&'src str),
+    DuplicateStructField {
+        struct_name: &'src str,
+        field_name: &'src str,
+    },
     StructFieldCountMismatch {
         struct_name: &'src str,
         expected: usize,
@@ -174,6 +178,10 @@ pub enum TypeErrorKind<'src, 'ast> {
     ArrayLValueDimensionMismatch {
         expected: usize,
         actual: usize,
+    },
+    MissingReturn {
+        fn_name: &'src str,
+        return_type: &'ast TypeValue<'src, 'ast>,
     },
 }
 

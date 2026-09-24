@@ -1,10 +1,10 @@
 use crate::{
     parser::ast::{
         Cmd, ParsedBinding, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt, ParsedStructField,
-        ParsedType, StructField,
+        ParsedType, Stmt, StructField, Type,
     },
     typechecker::{
-        ast::{TypeError, TypeValue, TypedCmd, TypedStructField},
+        ast::{TypeError, TypeErrorKind, TypeValue, TypedCmd, TypedStructField},
         typecheck_binding,
         typecheck_ctx::TypecheckCtx,
         typecheck_expr, typecheck_lvalue, typecheck_stmt, typecheck_type,
@@ -50,8 +50,20 @@ fn typecheck_struct<'src, 'old, 'new>(
     fields: &Vec<&'old ParsedStructField<'src, 'old>>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     let mut resolved_fields = Vec::new();
-    let mut typed_fields = Vec::new();
+    let mut typed_fields: Vec<&'new TypedStructField<'src, 'new>> = Vec::new();
     for field in fields {
+        for prev_field in &typed_fields {
+            if prev_field.value.name == field.value.name {
+                return Err(TypeError {
+                    offset: field.offset,
+                    value: TypeErrorKind::DuplicateStructField {
+                        struct_name: name,
+                        field_name: field.value.name,
+                    },
+                });
+            }
+        }
+
         // resolve to a typevalue
         let resolved_tyval = typecheck_type::typevalue_of_type(ctx, field.value.ty)?;
         resolved_fields.push((field.value.name, resolved_tyval));
@@ -101,7 +113,14 @@ fn typecheck_write<'src, 'old, 'new>(
     expr: &'old ParsedExpr<'src, 'old>,
     name: &'src str,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
-    let typed_expr = typecheck_expr::infer(ctx, expr)?;
+    let rgba2d = TypeValue::new(
+        ctx,
+        TypeValue::Array {
+            element_type: TypeValue::new(ctx, TypeValue::Struct { name: "rgba" }),
+            dimension: 2,
+        },
+    );
+    let typed_expr = typecheck_expr::check(ctx, expr, rgba2d)?;
     Ok(TypedCmd::new(ctx, offset, Cmd::Write(typed_expr, name)))
 }
 
@@ -178,9 +197,23 @@ fn typecheck_fn<'src, 'old, 'new>(
 
     // check each statement in the body
     let mut typed_body = Vec::new();
+    let mut return_found = matches!(return_type.value, Type::Void);
     for stmt in body {
         let typed_stmt = typecheck_stmt::typecheck_stmt(ctx, stmt, ret_tyval)?;
         typed_body.push(typed_stmt);
+        if matches!(typed_stmt.value, Stmt::Return(_)) {
+            return_found = true;
+        }
+    }
+
+    if !return_found {
+        return Err(TypeError {
+            offset,
+            value: TypeErrorKind::MissingReturn {
+                fn_name: name,
+                return_type: ret_tyval,
+            },
+        });
     }
 
     // goodbye function body scope

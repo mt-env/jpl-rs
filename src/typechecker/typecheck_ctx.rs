@@ -55,32 +55,53 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
         );
 
         // f32 -> f32: sqrt, exp, sin, cos, tan, asin, acos, atan, and log
-        current.add_fn_info("sqrt", vec![&TypeValue::Float], &TypeValue::Float);
-        current.add_fn_info("exp", vec![&TypeValue::Float], &TypeValue::Float);
-        current.add_fn_info("sin", vec![&TypeValue::Float], &TypeValue::Float);
-        current.add_fn_info("cos", vec![&TypeValue::Float], &TypeValue::Float);
-        current.add_fn_info("tan", vec![&TypeValue::Float], &TypeValue::Float);
-        current.add_fn_info("asin", vec![&TypeValue::Float], &TypeValue::Float);
-        current.add_fn_info("acos", vec![&TypeValue::Float], &TypeValue::Float);
-        current.add_fn_info("atan", vec![&TypeValue::Float], &TypeValue::Float);
-        current.add_fn_info("log", vec![&TypeValue::Float], &TypeValue::Float);
+        let f32_f32 = NameInfo::new(
+            &current,
+            NameInfo::Fn {
+                params: vec![&TypeValue::Float],
+                ret_ty: &TypeValue::Float,
+            },
+        );
+        current.global_env.insert("sqrt", f32_f32);
+        current.global_env.insert("exp", f32_f32);
+        current.global_env.insert("sin", f32_f32);
+        current.global_env.insert("cos", f32_f32);
+        current.global_env.insert("tan", f32_f32);
+        current.global_env.insert("asin", f32_f32);
+        current.global_env.insert("acos", f32_f32);
+        current.global_env.insert("atan", f32_f32);
+        current.global_env.insert("log", f32_f32);
 
         // (f32, f32) -> f32: pow, atan2
-        current.add_fn_info(
-            "pow",
-            vec![&TypeValue::Float, &TypeValue::Float],
-            &TypeValue::Float,
+        let f32_f32_f32 = NameInfo::new(
+            &current,
+            NameInfo::Fn {
+                params: vec![&TypeValue::Float, &TypeValue::Float],
+                ret_ty: &TypeValue::Float,
+            },
         );
-        current.add_fn_info(
-            "atan2",
-            vec![&TypeValue::Float, &TypeValue::Float],
-            &TypeValue::Float,
-        );
+        current.global_env.insert("pow", f32_f32_f32);
+        current.global_env.insert("atan2", f32_f32_f32);
 
         // i32 -> f32: to_float
-        current.add_fn_info("to_float", vec![&TypeValue::Int], &TypeValue::Float);
+        let i32_f32 = NameInfo::new(
+            &current,
+            NameInfo::Fn {
+                params: vec![&TypeValue::Int],
+                ret_ty: &TypeValue::Float,
+            },
+        );
+        current.global_env.insert("to_float", i32_f32);
+
         // f32 -> i32: to_int
-        current.add_fn_info("to_int", vec![&TypeValue::Float], &TypeValue::Int);
+        let f32_i32 = NameInfo::new(
+            &current,
+            NameInfo::Fn {
+                params: vec![&TypeValue::Float],
+                ret_ty: &TypeValue::Int,
+            },
+        );
+        current.global_env.insert("to_int", f32_i32);
 
         current
     }
@@ -103,9 +124,15 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
         name: &'src str,
         params: Vec<&'ast TypeValue<'src, 'ast>>,
         ret_ty: &'ast TypeValue<'src, 'ast>,
-    ) {
+    ) -> Result<(), TypeError<'src, 'ast>> {
         let fn_info = NameInfo::new(self, NameInfo::Fn { params, ret_ty });
-        self.global_env.insert(name, &fn_info);
+        if let Some(_) = self.global_env.insert(name, &fn_info) {
+            return Err(TypeError {
+                offset: 0,
+                value: TypeErrorKind::DuplicateIdentifier(name),
+            });
+        }
+        Ok(())
     }
 
     pub(super) fn lookup(&self, name: &'src str) -> Option<&'ast NameInfo<'src, 'ast>> {
