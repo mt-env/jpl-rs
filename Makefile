@@ -5,7 +5,7 @@ all: run
 compile:
 	cargo build --release
 
-run: compile
+run:
 	./target/release/jpl-rs $(TEST) $(FLAGS)
 
 clean:
