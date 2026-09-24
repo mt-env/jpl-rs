@@ -43,7 +43,7 @@ fn typecheck_assert<'src, 'old, 'new>(
     expr: &'old ParsedExpr<'src, 'old>,
     msg: &'src str,
 ) -> Result<&'new TypedStmt<'src, 'new>, TypeError<'src, 'new>> {
-    let typed_expr = typecheck_expr::infer(ctx, expr)?;
+    let typed_expr = typecheck_expr::check(ctx, expr, &TypeValue::Bool)?;
     Ok(TypedStmt::new(ctx, offset, Stmt::Assert(typed_expr, msg)))
 }
 

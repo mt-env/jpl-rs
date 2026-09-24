@@ -343,7 +343,7 @@ fn infer_array_loop<'src, 'old, 'new>(
         });
     }
 
-    // each binding must be an int, and is then added to the scope
+    // each binding must be an int
     let mut typed_bindings = Vec::new();
     for binding in bindings.iter() {
         let typed_expr = typecheck_expr::check(ctx, binding.value.expr, &TypeValue::Int)?;
@@ -355,6 +355,12 @@ fn infer_array_loop<'src, 'old, 'new>(
                 expr: typed_expr,
             },
         ));
+    }
+
+    // add bindings to scope after checking each one
+    // e.g., show array[i : 3, j : i] 1 is invalid
+    // this is dumb
+    for binding in bindings {
         ctx.bind(binding.offset, binding.value.name, &TypeValue::Int)?;
     }
 
@@ -394,7 +400,7 @@ fn infer_sum_loop<'src, 'old, 'new>(
         });
     }
 
-    // each binding must be an int, and is then added to the scope
+    // each binding must be an int
     let mut typed_bindings = Vec::new();
     for binding in bindings.iter() {
         let typed_expr = typecheck_expr::check(ctx, binding.value.expr, &TypeValue::Int)?;
@@ -406,10 +412,14 @@ fn infer_sum_loop<'src, 'old, 'new>(
                 expr: typed_expr,
             },
         ));
+    }
+
+    // add bindings to scope after checking each one
+    for binding in bindings {
         ctx.bind(binding.offset, binding.value.name, &TypeValue::Int)?;
     }
 
-    let typed_body = infer(ctx, body)?;
+    let typed_body = typecheck_expr::check_num(ctx, body)?;
 
     ctx.pop_scope();
 

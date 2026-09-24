@@ -54,7 +54,7 @@ pub(super) fn bind_lvalue<'src, 'old, 'new>(
             // bind the array and all its dimensions
             ctx.bind(lvalue.offset, name, ty)?;
             for dim in dimensions {
-                // ctx.bind(dim, &TypeValue::Int)?; // TODO source info here
+                ctx.bind(lvalue.offset, dim, &TypeValue::Int)?;
             }
             Ok(())
         }

@@ -127,7 +127,7 @@ fn typecheck_assert<'src, 'old, 'new>(
     expr: &'old ParsedExpr<'src, 'old>,
     msg: &'src str,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
-    let typed_expr = typecheck_expr::infer(ctx, expr)?;
+    let typed_expr = typecheck_expr::check(ctx, expr, &TypeValue::Bool)?;
     Ok(TypedCmd::new(ctx, offset, Cmd::Assert(typed_expr, msg)))
 }
 
@@ -174,7 +174,7 @@ fn typecheck_fn<'src, 'old, 'new>(
     let ret_tyval = typecheck_type::typevalue_of_type(ctx, return_type)?;
 
     // add fn info to global env - has to be done before checking body for recursion
-    ctx.add_fn_info(name, param_types, ret_tyval);
+    ctx.add_fn_info(name, param_types, ret_tyval)?;
 
     // check each statement in the body
     let mut typed_body = Vec::new();

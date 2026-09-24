@@ -3,7 +3,8 @@ use crate::{
     parser::ast::{ParsedType, Type},
     typechecker::{
         TypecheckCtx,
-        ast::{TypeError, TypeValue, TypedType},
+        ast::{TypeError, TypeErrorKind, TypeValue, TypedType},
+        typecheck_ctx::NameInfo,
     },
 };
 
@@ -50,7 +51,15 @@ pub(super) fn typevalue_of_type<'src, 'old, 'new>(
                 dimension: dimension,
             }
         }
-        Type::Struct { name } => TypeValue::Struct { name },
+        Type::Struct { name } => {
+            let Some(NameInfo::Struct(_)) = ctx.lookup(name) else {
+                return Err(TypeError {
+                    offset: ty.offset,
+                    value: TypeErrorKind::UnknownStruct(name),
+                });
+            };
+            TypeValue::Struct { name }
+        }
         Type::Void => TypeValue::Void,
     };
     Ok(TypeValue::new(ctx, typevalue))
