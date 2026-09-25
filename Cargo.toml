@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 bumpalo = "3.20.3"
+phf = { version = "0.13.1", features = ["macros"] }
 
 [lints.clippy]
 pedantic = { level = "deny", priority = -1 }
