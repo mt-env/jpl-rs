@@ -2,31 +2,31 @@ use crate::lexer::token::{IllegalByteError, LexError, LexErrorKind, Token, Token
 
 pub mod token;
 
-const KEYWORDS: [(&str, TokenKind); 23] = [
-    ("array", TokenKind::Array),
-    ("assert", TokenKind::Assert),
-    ("bool", TokenKind::BoolType),
-    ("else", TokenKind::Else),
-    ("false", TokenKind::False),
-    ("float", TokenKind::FloatType),
-    ("fn", TokenKind::Fn),
-    ("if", TokenKind::If),
-    ("image", TokenKind::Image),
-    ("int", TokenKind::IntType),
-    ("let", TokenKind::Let),
-    ("print", TokenKind::Print),
-    ("read", TokenKind::Read),
-    ("return", TokenKind::Return),
-    ("show", TokenKind::Show),
-    ("struct", TokenKind::Struct),
-    ("sum", TokenKind::Sum),
-    ("then", TokenKind::Then),
-    ("time", TokenKind::Time),
-    ("to", TokenKind::To),
-    ("true", TokenKind::True),
-    ("void", TokenKind::Void),
-    ("write", TokenKind::Write),
-];
+static KEYWORDS: phf::Map<&str, TokenKind> = phf::phf_map! {
+    "array" => TokenKind::Array,
+    "assert" => TokenKind::Assert,
+    "bool" => TokenKind::BoolType,
+    "else" => TokenKind::Else,
+    "false" => TokenKind::False,
+    "float" => TokenKind::FloatType,
+    "fn" => TokenKind::Fn,
+    "if" => TokenKind::If,
+    "image" => TokenKind::Image,
+    "int" => TokenKind::IntType,
+    "let" => TokenKind::Let,
+    "print" => TokenKind::Print,
+    "read" => TokenKind::Read,
+    "return" => TokenKind::Return,
+    "show" => TokenKind::Show,
+    "struct" => TokenKind::Struct,
+    "sum" => TokenKind::Sum,
+    "then" => TokenKind::Then,
+    "time" => TokenKind::Time,
+    "to" => TokenKind::To,
+    "true" => TokenKind::True,
+    "void" => TokenKind::Void,
+    "write" => TokenKind::Write
+};
 
 const PUNCTUATION: [(&str, TokenKind); 8] = [
     (":", TokenKind::Colon),
@@ -246,10 +246,8 @@ fn read_alpha(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usiz
     // safe - only way pos is OOB is if it's right at the end of the program
     // in which case indexing to the end of the program is valid
     let token_str = unsafe { program.get_unchecked(start..pos) };
-    for keyword in KEYWORDS {
-        if token_str == keyword.0 {
-            return (Ok(Token::new(keyword.1, start, token_str)), pos);
-        }
+    if let Some(&token_kind) = KEYWORDS.get(token_str) {
+        return (Ok(Token::new(token_kind, start, token_str)), pos);
     }
 
     (Ok(Token::new(TokenKind::Variable, start, token_str)), pos)
