@@ -1,6 +1,9 @@
 name: Auto-grades your solution
 
-on: push
+on:
+  push:
+    branches:
+      - main
 
 env:
   COURSE_ORG: utah-cs4470-fa26
