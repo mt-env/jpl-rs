@@ -116,6 +116,11 @@ impl<'src> Lexer<'src> {
             return;
         }
 
+        if self.program.starts_with(b"/*") {
+            self.skip_block_comment();
+            return;
+        }
+
         todo!("delegate to helpers based on first char")
     }
 
@@ -128,9 +133,9 @@ impl<'src> Lexer<'src> {
             .unwrap_or(self.program.len());
         let token_str = &self.program[start..end];
         let tokenkind = KEYWORDS.get(token_str).unwrap_or(&TokenKind::Variable);
-        self.curr_pos = end;
         self.tokens
             .push(Token::from_u8(*tokenkind, start, token_str));
+        self.curr_pos = end;
     }
 
     fn skip_line_comment(&mut self) {
@@ -145,6 +150,23 @@ impl<'src> Lexer<'src> {
                 return;
             }
         }
+        self.curr_pos = self.program.len();
+    }
+
+    fn skip_block_comment(&mut self) {
+        let start = self.curr_pos;
+        for (i, c) in self.program[start..].iter().enumerate() {
+            if !valid_char(*c) {
+                self.errors
+                    .push(LexError::new(start + i, LexErrorKind::IllegalByte(*c)));
+            }
+            if *c == b'*' && self.program.get(start + i + 1) == Some(&b'/') {
+                self.curr_pos = start + i + 2;
+                return;
+            }
+        }
+        self.errors
+            .push(LexError::new(start, LexErrorKind::UnterminatedComment));
         self.curr_pos = self.program.len();
     }
 }
