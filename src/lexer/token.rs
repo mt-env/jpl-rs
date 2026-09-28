@@ -67,12 +67,22 @@ impl<'a> Token<'a> {
     pub const fn new(kind: TokenKind, offset: usize, str: &'a str) -> Self {
         Token { kind, offset, str }
     }
+
+    #[must_use]
+    pub const fn from_u8(kind: TokenKind, offset: usize, bytes: &'a [u8]) -> Self {
+        Token {
+            kind,
+            offset,
+            str: unsafe { std::str::from_utf8_unchecked(bytes) },
+        }
+    }
 }
 
 pub enum LexErrorKind {
     UnterminatedString,
     UnterminatedComment,
     IllegalCharacter(u8),
+    IllegalByte(u8),
 }
 
 pub type LexError = Spanned<LexErrorKind>;
@@ -83,18 +93,6 @@ impl LexError {
         Self {
             offset,
             value: kind,
-        }
-    }
-}
-
-pub type IllegalByteError = Spanned<u8>;
-
-impl IllegalByteError {
-    #[must_use]
-    pub const fn new(offset: usize, byte: u8) -> Self {
-        Self {
-            offset,
-            value: byte,
         }
     }
 }
