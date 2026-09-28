@@ -1,24 +1,9 @@
 use crate::{
     Spanned,
-    lexer::token::{IllegalByteError, LexError, LexErrorKind},
+    lexer::token::{LexError, LexErrorKind},
 };
 
-pub fn print_validation_errors(errors: Vec<IllegalByteError>) {
-    for error in errors {
-        print_validation_error(error);
-    }
-}
-
-fn print_validation_error(
-    Spanned {
-        offset,
-        value: error,
-    }: IllegalByteError,
-) {
-    println!("Validation error at offset {offset}: Illegal byte 0x{error:02X}");
-}
-
-pub fn print_lex_errors(errors: Vec<LexError>, program: &str) {
+pub fn print_lex_errors(errors: Vec<LexError>, program: &[u8]) {
     for error in errors {
         print_lex_error(error, program);
     }
@@ -29,7 +14,7 @@ fn print_lex_error(
         offset,
         value: error,
     }: LexError,
-    program: &str,
+    program: &[u8],
 ) {
     let (line, col) = super::get_line_and_column(program, offset);
     super::show_line_with_error(program, offset);
@@ -43,5 +28,9 @@ fn print_lex_error(
         LexErrorKind::UnterminatedComment => {
             println!("Lex error at line {line}, column {col}: Unterminated comment");
         }
+        LexErrorKind::IllegalByte(b) => {
+            println!("Lex error at line {line}, column {col}: Illegal byte 0x{b:02X}");
+        }
     }
+    println!();
 }

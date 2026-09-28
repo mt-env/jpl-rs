@@ -24,15 +24,6 @@ pub fn run() -> ExitCode {
         }
     };
 
-    let program = match lexer::validate_source(program) {
-        Ok(program) => program,
-        Err(lex_errors) => {
-            error::lex::print_validation_errors(lex_errors);
-            println!("Compilation failed: lexical analysis failed");
-            return ExitCode::from(1);
-        }
-    };
-
     let tokens = match lexer::lex(&program) {
         Ok(tokens) => tokens,
         Err(lex_errors) => {

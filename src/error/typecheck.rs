@@ -8,7 +8,7 @@ pub fn print_type_error(
         offset,
         value: error,
     }: TypeError,
-    program: &str,
+    program: &[u8],
 ) {
     let (line, column) = super::get_line_and_column(program, offset);
     super::show_line_with_error(program, offset);
