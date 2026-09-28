@@ -106,9 +106,14 @@ impl<'src> Lexer<'src> {
             return;
         };
 
-        match curr_char {
-            b'a'..=b'z' | b'A'..=b'Z' => self.lex_alpha(),
-            _ => todo!(),
+        if curr_char.is_ascii_alphabetic() {
+            self.lex_alpha();
+            return;
+        }
+
+        if self.program.starts_with(b"//") {
+            self.skip_line_comment();
+            return;
         }
 
         todo!("delegate to helpers based on first char")
@@ -119,6 +124,7 @@ impl<'src> Lexer<'src> {
         let end = self.program[start..]
             .iter()
             .position(|&c| !(c.is_ascii_alphanumeric() || c == b'_'))
+            .map(|pos| start + pos)
             .unwrap_or(self.program.len());
         let token_str = &self.program[start..end];
         let tokenkind = KEYWORDS.get(token_str).unwrap_or(&TokenKind::Variable);
@@ -126,4 +132,23 @@ impl<'src> Lexer<'src> {
         self.tokens
             .push(Token::from_u8(*tokenkind, start, token_str));
     }
+
+    fn skip_line_comment(&mut self) {
+        let start = self.curr_pos;
+        for (i, c) in self.program[start..].iter().enumerate() {
+            if !valid_char(*c) {
+                self.errors
+                    .push(LexError::new(start + i, LexErrorKind::IllegalByte(*c)));
+            }
+            if *c == b'\n' {
+                self.curr_pos = start + i + 1;
+                return;
+            }
+        }
+        self.curr_pos = self.program.len();
+    }
+}
+
+fn valid_char(c: u8) -> bool {
+    (c >= 32 && c <= 126) || c == 10
 }
