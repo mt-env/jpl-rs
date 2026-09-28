@@ -62,6 +62,7 @@ impl std::fmt::Display for ParsedExpr<'_, '_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.value.kind {
             ExprKind::Int(i) => write!(f, "(IntExpr {i})"),
+            #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
             ExprKind::Float(fl) => write!(f, "(FloatExpr {})", *fl as i64),
             ExprKind::Bool(b) => {
                 if *b {

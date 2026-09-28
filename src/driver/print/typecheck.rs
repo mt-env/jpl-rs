@@ -63,6 +63,7 @@ impl std::fmt::Display for TypedExpr<'_, '_> {
         let ty_value = self.value.ann;
         match &self.value.kind {
             ExprKind::Int(i) => write!(f, "(IntExpr {ty_value} {i})"),
+            #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
             ExprKind::Float(fl) => write!(f, "(FloatExpr {ty_value} {})", *fl as i64),
             ExprKind::Bool(b) => {
                 if *b {
