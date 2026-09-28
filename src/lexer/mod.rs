@@ -1,3 +1,5 @@
+use core::str;
+
 use crate::lexer::token::{LexError, LexErrorKind, Token, TokenKind};
 
 pub mod token;
@@ -104,6 +106,24 @@ impl<'src> Lexer<'src> {
             return;
         };
 
+        match curr_char {
+            b'a'..=b'z' | b'A'..=b'Z' => self.lex_alpha(),
+            _ => todo!(),
+        }
+
         todo!("delegate to helpers based on first char")
+    }
+
+    fn lex_alpha(&mut self) {
+        let start = self.curr_pos;
+        let end = self.program[start..]
+            .iter()
+            .position(|&c| !(c.is_ascii_alphanumeric() || c == b'_'))
+            .unwrap_or(self.program.len());
+        let token_str = &self.program[start..end];
+        let tokenkind = KEYWORDS.get(token_str).unwrap_or(&TokenKind::Variable);
+        self.curr_pos = end;
+        self.tokens
+            .push(Token::from_u8(*tokenkind, start, token_str));
     }
 }
