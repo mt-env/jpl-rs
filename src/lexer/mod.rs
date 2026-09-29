@@ -35,8 +35,6 @@ impl<'src> Lexer<'src> {
 
         // dedup newlines and add EoF token
         self.tokens
-            .dedup_by(|a, b| a.kind == TokenKind::NewLine && b.kind == TokenKind::NewLine);
-        self.tokens
             .push(Token::new(TokenKind::EndOfFile, self.curr_pos, ""));
 
         if self.errors.is_empty() {
@@ -142,6 +140,14 @@ impl<'src> Lexer<'src> {
         // punctuation - must be done after operators because some punctuation (e.g. '=') can be part of an operator
         // also must be done after numbers because numbers can start with a dot
         if let Some(tokenkind) = check_punctuation(*curr_char) {
+            if self
+                .tokens
+                .last()
+                .is_some_and(|t| t.kind == TokenKind::NewLine && tokenkind == TokenKind::NewLine)
+            {
+                self.curr_pos += 1;
+                return;
+            }
             let start = self.curr_pos;
             let end = self.curr_pos + 1;
             self.tokens
