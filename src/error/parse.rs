@@ -1,3 +1,5 @@
+use std::io::{self, BufWriter, Write};
+
 use crate::{
     Spanned,
     parser::ast::{ParseError, ParseErrorKind},
@@ -8,18 +10,25 @@ pub fn print_parse_error(
         offset,
         value: error,
     }: ParseError,
-    program: &str,
-) {
+    program: &[u8],
+) -> io::Result<()> {
+    let stdout = io::stdout();
+    let handle = stdout.lock();
+    let mut writer = BufWriter::new(handle);
     let (line, column) = super::get_line_and_column(program, offset);
-    super::show_line_with_error(program, offset);
+    super::show_line_with_error(&mut writer, program, offset)?;
     match error {
         ParseErrorKind::InvalidIntLiteral(src) => {
-            println!(
+            writeln!(
+                writer,
                 "Parse error at line {line}, column {column}: Invalid integer literal '{src}'",
-            );
+            )
         }
         ParseErrorKind::InvalidFloatLiteral(src) => {
-            println!("Parse error at line {line}, column {column}: Invalid float literal '{src}'");
+            writeln!(
+                writer,
+                "Parse error at line {line}, column {column}: Invalid float literal '{src}'"
+            )
         }
         ParseErrorKind::UnexpectedToken {
             expected,
@@ -31,9 +40,10 @@ pub fn print_parse_error(
                 .map(|kind| format!("{kind}"))
                 .collect::<Vec<_>>()
                 .join(", ");
-            println!(
+            writeln!(
+                writer,
                 "Parse error at line {line}, column {column}: Unexpected token '{value}' of kind '{found}', expected one of: {expected_str}",
-            );
+            )
         }
     }
 }

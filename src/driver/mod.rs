@@ -24,26 +24,27 @@ pub fn run() -> ExitCode {
         }
     };
 
-    let program = match lexer::validate_source(program) {
-        Ok(program) => program,
-        Err(lex_errors) => {
-            error::lex::print_validation_errors(lex_errors);
-            println!("Compilation failed: lexical analysis failed");
-            return ExitCode::from(1);
-        }
-    };
-
     let tokens = match lexer::lex(&program) {
         Ok(tokens) => tokens,
         Err(lex_errors) => {
-            error::lex::print_lex_errors(lex_errors, &program);
+            if error::lex::print_lex_errors(lex_errors, &program).is_err() {
+                println!("Compilation failed: could not print lex errors");
+            }
             println!("Compilation failed: lexical analysis failed");
             return ExitCode::from(1);
         }
     };
 
+    if mode == Some(Mode::LexNoPrint) {
+        println!("Compilation succeeded: lexical analysis complete");
+        return ExitCode::from(0);
+    }
+
     if mode == Some(Mode::Lex) {
-        print::lex::print_tokens(tokens);
+        if print::lex::print_tokens(tokens).is_err() {
+            println!("Compilation failed: could not print tokens");
+            return ExitCode::from(1);
+        }
         println!("Compilation succeeded: lexical analysis complete");
         return ExitCode::from(0);
     }
@@ -52,14 +53,19 @@ pub fn run() -> ExitCode {
     let parsed_program = match parser::parse(&ast_alloc, tokens) {
         Ok(parsed_program) => parsed_program,
         Err(parse_errors) => {
-            error::parse::print_parse_error(parse_errors, &program);
+            if error::parse::print_parse_error(parse_errors, &program).is_err() {
+                println!("Compilation failed: could not print parse errors");
+            }
             println!("Compilation failed: parsing failed");
             return ExitCode::from(1);
         }
     };
 
     if mode == Some(Mode::Parse) {
-        print::parse::print_sexp(parsed_program);
+        if print::parse::print_sexp(parsed_program).is_err() {
+            println!("Compilation failed: could not print parsed AST");
+            return ExitCode::from(1);
+        }
         println!("Compilation succeeded: parsing complete");
         return ExitCode::from(0);
     }
@@ -68,14 +74,19 @@ pub fn run() -> ExitCode {
     let typed_program = match typechecker::typecheck(&typeck_alloc, parsed_program) {
         Ok(typed_program) => typed_program,
         Err(type_errors) => {
-            error::typecheck::print_type_error(type_errors, &program);
+            if error::typecheck::print_type_error(type_errors, &program).is_err() {
+                println!("Compilation failed: could not print type errors");
+            }
             println!("Compilation failed: typechecking failed");
             return ExitCode::from(1);
         }
     };
 
     if mode == Some(Mode::Typecheck) {
-        print::typecheck::print_typed_program(typed_program);
+        if print::typecheck::print_typed_program(typed_program).is_err() {
+            println!("Compilation failed: could not print typed AST");
+            return ExitCode::from(1);
+        }
         println!("Compilation succeeded: typechecking complete");
         return ExitCode::from(0);
     }
@@ -95,6 +106,7 @@ fn parse_args() -> Result<Config, CliError> {
             }
             match argument.as_str() {
                 "-l" => mode = Some(Mode::Lex),
+                "-_" => mode = Some(Mode::LexNoPrint),
                 "-p" => mode = Some(Mode::Parse),
                 "-t" => mode = Some(Mode::Typecheck),
                 "-i" => mode = Some(Mode::IR),
@@ -124,6 +136,7 @@ pub struct Config {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Mode {
     Lex,
+    LexNoPrint,
     Parse,
     Typecheck,
     IR,

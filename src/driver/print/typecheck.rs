@@ -1,12 +1,19 @@
+use std::io::{self, BufWriter, Write};
+
 use crate::{
     parser::ast::{Cmd, ExprKind, Stmt},
     typechecker::ast::{TypeValue, TypedCmd, TypedExpr, TypedProgram, TypedStmt},
 };
 
-pub fn print_typed_program(program: TypedProgram) {
+pub fn print_typed_program(program: TypedProgram) -> io::Result<()> {
+    let stdout = io::stdout();
+    let handle = stdout.lock();
+    let mut writer = BufWriter::new(handle);
     for cmd in program {
-        println!("{cmd}");
+        writeln!(writer, "{cmd}")?;
     }
+    writer.flush()?;
+    Ok(())
 }
 
 impl std::fmt::Display for TypedCmd<'_, '_> {
@@ -56,6 +63,7 @@ impl std::fmt::Display for TypedExpr<'_, '_> {
         let ty_value = self.value.ann;
         match &self.value.kind {
             ExprKind::Int(i) => write!(f, "(IntExpr {ty_value} {i})"),
+            #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
             ExprKind::Float(fl) => write!(f, "(FloatExpr {ty_value} {})", *fl as i64),
             ExprKind::Bool(b) => {
                 if *b {

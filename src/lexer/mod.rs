@@ -1,304 +1,346 @@
-use crate::lexer::token::{IllegalByteError, LexError, LexErrorKind, Token, TokenKind};
+use crate::lexer::token::{LexError, LexErrorKind, Token, TokenKind};
 
 pub mod token;
 
-const KEYWORDS: [(&str, TokenKind); 23] = [
-    ("array", TokenKind::Array),
-    ("assert", TokenKind::Assert),
-    ("bool", TokenKind::BoolType),
-    ("else", TokenKind::Else),
-    ("false", TokenKind::False),
-    ("float", TokenKind::FloatType),
-    ("fn", TokenKind::Fn),
-    ("if", TokenKind::If),
-    ("image", TokenKind::Image),
-    ("int", TokenKind::IntType),
-    ("let", TokenKind::Let),
-    ("print", TokenKind::Print),
-    ("read", TokenKind::Read),
-    ("return", TokenKind::Return),
-    ("show", TokenKind::Show),
-    ("struct", TokenKind::Struct),
-    ("sum", TokenKind::Sum),
-    ("then", TokenKind::Then),
-    ("time", TokenKind::Time),
-    ("to", TokenKind::To),
-    ("true", TokenKind::True),
-    ("void", TokenKind::Void),
-    ("write", TokenKind::Write),
-];
-
-const PUNCTUATION: [(&str, TokenKind); 8] = [
-    (":", TokenKind::Colon),
-    (",", TokenKind::Comma),
-    ("{", TokenKind::LCurly),
-    ("(", TokenKind::LParen),
-    ("[", TokenKind::LSquare),
-    ("}", TokenKind::RCurly),
-    (")", TokenKind::RParen),
-    ("]", TokenKind::RSquare),
-];
-
-const OPERATORS: [(&str, TokenKind); 16] = [
-    ("&&", TokenKind::Op),
-    ("||", TokenKind::Op),
-    ("==", TokenKind::Op),
-    ("!=", TokenKind::Op),
-    ("<=", TokenKind::Op),
-    (">=", TokenKind::Op),
-    ("+", TokenKind::Op),
-    ("-", TokenKind::Op),
-    ("*", TokenKind::Op),
-    ("/", TokenKind::Op),
-    ("<", TokenKind::Op),
-    (">", TokenKind::Op),
-    ("!", TokenKind::Op),
-    (".", TokenKind::Dot),
-    ("%", TokenKind::Op),
-    ("=", TokenKind::Equals),
-];
-
-pub fn validate_source(program: Vec<u8>) -> Result<String, Vec<IllegalByteError>> {
-    let mut errors = Vec::new();
-    for (offset, byte) in program.iter().enumerate() {
-        if (*byte >= 32 && *byte <= 126) || *byte == 10 {
-            continue;
-        }
-        errors.push(IllegalByteError::new(offset, *byte));
-    }
-    if errors.is_empty() {
-        unsafe { Ok(String::from_utf8(program).unwrap_unchecked()) } // safe because we just checked all bytes
-    } else {
-        Err(errors)
-    }
+pub fn lex(program: &[u8]) -> Result<Vec<Token<'_>>, Vec<LexError>> {
+    Lexer::new(program).lex()
 }
 
-pub fn lex(program: &str) -> Result<Vec<Token<'_>>, Vec<LexError>> {
-    let mut tokens: Vec<Token> = Vec::new();
-    let mut errors = Vec::new();
-    let mut curr_pos = 0;
-
-    loop {
-        let (result, next_pos) = next_token(program, curr_pos);
-        curr_pos = next_pos;
-        match result {
-            Ok(token) => {
-                // skip consecutive newlines
-                if token.kind == TokenKind::NewLine
-                    && let Some(last_token) = tokens.last()
-                    && last_token.kind == TokenKind::NewLine
-                {
-                    continue;
-                }
-                tokens.push(token);
-            }
-            Err(error) => errors.push(error),
-        }
-
-        if let Some(token) = tokens.last()
-            && token.kind == TokenKind::EndOfFile
-        {
-            break;
-        }
-    }
-
-    if errors.is_empty() {
-        Ok(tokens)
-    } else {
-        Err(errors)
-    }
+struct Lexer<'src> {
+    program: &'src [u8],
+    curr_pos: usize,
+    tokens: Vec<Token<'src>>,
+    errors: Vec<LexError>,
 }
 
-fn next_token(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
-    // nuke all whitespace and comments at the start of the token
-    let mut next = start;
-    loop {
-        let previous = next;
-        next = skip_whitespace(program, next);
-        next = skip_line_comment(program, next);
-        next = match skip_block_comment(program, next) {
-            (pos, Ok(())) => pos,
-            (pos, Err(e)) => return (Err(e), pos),
+impl<'src> Lexer<'src> {
+    fn new(program: &'src [u8]) -> Self {
+        Self {
+            program,
+            curr_pos: 0,
+            tokens: Vec::new(),
+            errors: Vec::new(),
+        }
+    }
+
+    fn at_end(&self) -> bool {
+        self.curr_pos >= self.program.len()
+    }
+
+    fn lex(mut self) -> Result<Vec<Token<'src>>, Vec<LexError>> {
+        // loop - maximal munch based on peeked current char until end
+        while !self.at_end() {
+            self.next();
+        }
+
+        // dedup newlines and add EoF token
+        self.tokens
+            .push(Token::new(TokenKind::EndOfFile, self.curr_pos, ""));
+
+        if self.errors.is_empty() {
+            Ok(self.tokens)
+        } else {
+            Err(self.errors)
+        }
+    }
+
+    fn next(&mut self) {
+        // return - add EoF in lex method
+        let Some(curr_char) = self.program.get(self.curr_pos) else {
+            return;
         };
-        next = skip_escaped_newline(program, next);
 
-        if next == previous {
-            break;
+        // check for illegal bytes first
+        if !valid_char(*curr_char) {
+            self.errors.push(LexError::new(
+                self.curr_pos,
+                LexErrorKind::IllegalByte(*curr_char),
+            ));
+            self.curr_pos += 1;
+            return;
         }
-    }
 
-    let first_char = program.as_bytes().get(next);
+        // eat whitespace
+        if *curr_char == b' ' {
+            self.curr_pos += 1;
+            return;
+        }
 
-    // sentinel value for end
-    let Some(first_char) = first_char else {
-        return (Ok(Token::new(TokenKind::EndOfFile, next, "")), next);
-    };
+        // check for alphanumeric identifiers and keywords
+        if curr_char.is_ascii_alphabetic() {
+            self.lex_alpha();
+            return;
+        }
 
-    // if first letter is alphabetic, read until neither alphanumeric nor underscore
-    if first_char.is_ascii_alphabetic() {
-        return read_alpha(program, next);
-    }
-
-    // read numeric
-    if first_char.is_ascii_digit()
-        || (first_char == &b'.'
-            && program
-                .as_bytes()
-                .get(next + 1)
-                .is_some_and(u8::is_ascii_digit))
-    {
-        return read_numeric(program, next);
-    }
-
-    // check punctuation + operators
-    let hardcoded_tokens = PUNCTUATION.iter().chain(OPERATORS.iter());
-    for (keyword, kind) in hardcoded_tokens {
-        if let Some(slice) = program.get(next..)
-            && slice.starts_with(keyword)
+        // check for int/float literals. floats can start with a dot, yay -_-
+        if curr_char.is_ascii_digit()
+            || (*curr_char == b'.'
+                && self
+                    .program
+                    .get(self.curr_pos + 1)
+                    .is_some_and(u8::is_ascii_digit))
         {
-            return (Ok(Token::new(*kind, next, keyword)), next + keyword.len());
-        }
-    }
-
-    // read string literal
-    if first_char == &b'"' {
-        return read_string_literal(program, next);
-    }
-
-    // read newline
-    if first_char == &b'\n' {
-        let token = Token::new(TokenKind::NewLine, next, "\n");
-        return (Ok(token), next + 1);
-    }
-
-    (
-        Err(LexError::new(
-            next,
-            LexErrorKind::IllegalCharacter(*first_char),
-        )),
-        next + 1,
-    )
-}
-
-fn skip_whitespace(program: &str, start: usize) -> usize {
-    let mut pos = start;
-    while program.as_bytes().get(pos) == Some(&b' ') {
-        pos += 1;
-    }
-    pos
-}
-
-fn skip_line_comment(program: &str, start: usize) -> usize {
-    let mut pos = start;
-    if let Some(slice) = program.get(start..)
-        && slice.starts_with("//")
-    {
-        while let Some(c) = program.as_bytes().get(pos)
-            && c != &b'\n'
-        {
-            pos += 1;
-        }
-    }
-    pos
-}
-
-fn skip_block_comment(program: &str, start: usize) -> (usize, Result<(), LexError>) {
-    let mut pos = start;
-    if let Some(slice) = program.get(start..)
-        && slice.starts_with("/*")
-    {
-        pos += 2;
-
-        while let Some(slice) = program.get(pos..)
-            && !slice.starts_with("*/")
-        {
-            pos += 1;
+            self.lex_numeric();
+            return;
         }
 
-        if pos + 1 >= program.len() {
-            return (
-                pos,
-                Err(LexError::new(start, LexErrorKind::UnterminatedComment)),
-            );
+        if *curr_char == b'"' {
+            self.lex_string_literal();
+            return;
         }
 
-        pos += 2;
-    }
-    (pos, Ok(()))
-}
-
-fn skip_escaped_newline(program: &str, start: usize) -> usize {
-    if let Some(slice) = program.get(start..)
-        && slice.starts_with("\\\n")
-    {
-        return start + 2;
-    }
-    start
-}
-
-fn read_alpha(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
-    let mut pos = start;
-    while let Some(&c) = program.as_bytes().get(pos)
-        && (c.is_ascii_alphanumeric() || c == b'_')
-    {
-        pos += 1;
-    }
-    // safe - only way pos is OOB is if it's right at the end of the program
-    // in which case indexing to the end of the program is valid
-    let token_str = unsafe { program.get_unchecked(start..pos) };
-    for keyword in KEYWORDS {
-        if token_str == keyword.0 {
-            return (Ok(Token::new(keyword.1, start, token_str)), pos);
-        }
-    }
-
-    (Ok(Token::new(TokenKind::Variable, start, token_str)), pos)
-}
-
-fn read_string_literal(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
-    let mut pos = start + 1; // skip opening quote
-
-    while let Some(&c) = program.as_bytes().get(pos) {
-        if c == b'"' {
-            // safe - the `while let` guarantees we're in bounds
-            let token_str = unsafe { program.get_unchecked(start..=pos) };
-            return (Ok(Token::new(TokenKind::String, start, token_str)), pos + 1);
-        }
-        if c == b'\n' {
-            return (
-                Err(LexError::new(start, LexErrorKind::UnterminatedString)),
-                pos,
-            );
-        }
-        pos += 1;
-    }
-    (
-        Err(LexError::new(start, LexErrorKind::UnterminatedString)),
-        pos,
-    )
-}
-
-fn read_numeric(program: &str, start: usize) -> (Result<Token<'_>, LexError>, usize) {
-    let mut pos = start;
-    let mut has_decimal = false;
-
-    loop {
-        match program.as_bytes().get(pos) {
-            Some(b'0'..=b'9') => pos += 1,
-            Some(b'.') if !has_decimal => {
-                has_decimal = true;
-                pos += 1;
+        // delegate based on the first two characters
+        // comments and two character operators must be checked first
+        if let Some(two_char) = self.program.get(self.curr_pos..self.curr_pos + 2) {
+            // line comment
+            if two_char == b"//" {
+                self.skip_line_comment();
+                return;
             }
-            _ => break,
+
+            // block comment
+            if two_char == b"/*" {
+                self.skip_block_comment();
+                return;
+            }
+
+            // escaped newline
+            if two_char == b"\\\n" {
+                self.curr_pos += 2;
+                return;
+            }
+
+            // two character operators
+            if is_two_char_operator(two_char) {
+                let start = self.curr_pos;
+                let end = self.curr_pos + 2;
+                self.tokens.push(Token::from_u8(
+                    TokenKind::Op,
+                    start,
+                    &self.program[start..end],
+                ));
+                self.curr_pos = end;
+                return;
+            }
         }
+
+        // one char operators
+        if is_one_char_operator(*curr_char) {
+            let start = self.curr_pos;
+            let end = self.curr_pos + 1;
+            self.tokens.push(Token::from_u8(
+                TokenKind::Op,
+                start,
+                &self.program[start..end],
+            ));
+            self.curr_pos = end;
+            return;
+        }
+
+        // punctuation - must be done after operators because some punctuation (e.g. '=') can be part of an operator
+        // also must be done after numbers because numbers can start with a dot
+        if let Some(tokenkind) = check_punctuation(*curr_char) {
+            if self
+                .tokens
+                .last()
+                .is_some_and(|t| t.kind == TokenKind::NewLine && tokenkind == TokenKind::NewLine)
+            {
+                self.curr_pos += 1;
+                return;
+            }
+            let start = self.curr_pos;
+            let end = self.curr_pos + 1;
+            self.tokens
+                .push(Token::from_u8(tokenkind, start, &self.program[start..end]));
+            self.curr_pos = end;
+            return;
+        }
+
+        // if we reach here, we have an illegal character
+        self.errors.push(LexError::new(
+            self.curr_pos,
+            LexErrorKind::IllegalByte(*curr_char),
+        ));
+        self.curr_pos += 1;
     }
 
-    // safe - only way pos is OOB is if it's right at the end of the program
-    // in which case indexing to the end of the program is valid
-    let token_str = unsafe { program.get_unchecked(start..pos) };
-    if has_decimal {
-        (Ok(Token::new(TokenKind::FloatVal, start, token_str)), pos)
-    } else {
-        (Ok(Token::new(TokenKind::IntVal, start, token_str)), pos)
+    fn lex_alpha(&mut self) {
+        let start = self.curr_pos;
+        let end = self.program[start..]
+            .iter()
+            .position(|&c| !(c.is_ascii_alphanumeric() || c == b'_'))
+            .map(|pos| start + pos)
+            .unwrap_or(self.program.len());
+        let token_str = &self.program[start..end];
+        let tokenkind = check_keyword(token_str);
+        self.tokens
+            .push(Token::from_u8(tokenkind, start, token_str));
+        self.curr_pos = end;
+    }
+
+    fn lex_numeric(&mut self) {
+        let start = self.curr_pos;
+        let mut end = start;
+        let mut has_dot = false;
+        loop {
+            match self.program.get(end) {
+                Some(b'0'..=b'9') => end += 1,
+                Some(b'.') if !has_dot => {
+                    has_dot = true;
+                    end += 1;
+                }
+                _ => break,
+            }
+        }
+        let token_str = &self.program[start..end];
+        let tokenkind = if has_dot {
+            TokenKind::FloatVal
+        } else {
+            TokenKind::IntVal
+        };
+        self.tokens
+            .push(Token::from_u8(tokenkind, start, token_str));
+        self.curr_pos = end;
+    }
+
+    fn lex_string_literal(&mut self) {
+        let start = self.curr_pos;
+        let mut end = start + 1;
+        loop {
+            let Some(&c) = self.program.get(end) else {
+                self.errors
+                    .push(LexError::new(start, LexErrorKind::UnterminatedString));
+                break;
+            };
+            if !valid_char(c) {
+                self.errors
+                    .push(LexError::new(end, LexErrorKind::IllegalByte(c)));
+            }
+            if c == b'"' {
+                end += 1;
+                break;
+            }
+            if c == b'\n' {
+                self.errors
+                    .push(LexError::new(start, LexErrorKind::UnterminatedString));
+                break;
+            }
+            end += 1;
+        }
+        let token_str = &self.program[start..end];
+        self.tokens
+            .push(Token::from_u8(TokenKind::String, start, token_str));
+        self.curr_pos = end;
+    }
+
+    fn skip_line_comment(&mut self) {
+        let start = self.curr_pos;
+        for (i, c) in self.program[start..].iter().enumerate() {
+            if !valid_char(*c) {
+                self.errors
+                    .push(LexError::new(start + i, LexErrorKind::IllegalByte(*c)));
+            }
+            if *c == b'\n' {
+                self.curr_pos = start + i;
+                return;
+            }
+        }
+        self.curr_pos = self.program.len();
+    }
+
+    fn skip_block_comment(&mut self) {
+        let start = self.curr_pos;
+        for (i, c) in self.program[start..].iter().enumerate() {
+            if !valid_char(*c) {
+                self.errors
+                    .push(LexError::new(start + i, LexErrorKind::IllegalByte(*c)));
+            }
+            if *c == b'*' && self.program.get(start + i + 1) == Some(&b'/') {
+                self.curr_pos = start + i + 2;
+                return;
+            }
+        }
+        self.errors
+            .push(LexError::new(start, LexErrorKind::UnterminatedComment));
+        self.curr_pos = self.program.len();
+    }
+}
+
+fn valid_char(c: u8) -> bool {
+    (c >= 32 && c <= 126) || c == 10
+}
+
+fn check_keyword(token_str: &[u8]) -> TokenKind {
+    match token_str.len() {
+        2 => match token_str {
+            b"fn" => TokenKind::Fn,
+            b"if" => TokenKind::If,
+            b"to" => TokenKind::To,
+            _ => TokenKind::Variable,
+        },
+        3 => match token_str {
+            b"int" => TokenKind::IntType,
+            b"let" => TokenKind::Let,
+            b"sum" => TokenKind::Sum,
+            _ => TokenKind::Variable,
+        },
+        4 => match token_str {
+            b"bool" => TokenKind::BoolType,
+            b"else" => TokenKind::Else,
+            b"read" => TokenKind::Read,
+            b"show" => TokenKind::Show,
+            b"then" => TokenKind::Then,
+            b"time" => TokenKind::Time,
+            b"true" => TokenKind::True,
+            b"void" => TokenKind::Void,
+            _ => TokenKind::Variable,
+        },
+        5 => match token_str {
+            b"array" => TokenKind::Array,
+            b"false" => TokenKind::False,
+            b"float" => TokenKind::FloatType,
+            b"image" => TokenKind::Image,
+            b"print" => TokenKind::Print,
+            b"write" => TokenKind::Write,
+            _ => TokenKind::Variable,
+        },
+        6 => match token_str {
+            b"assert" => TokenKind::Assert,
+            b"return" => TokenKind::Return,
+            b"struct" => TokenKind::Struct,
+            _ => TokenKind::Variable,
+        },
+        _ => TokenKind::Variable,
+    }
+}
+
+fn is_one_char_operator(c: u8) -> bool {
+    match c {
+        b'+' | b'-' | b'*' | b'/' | b'<' | b'>' | b'!' | b'%' => true,
+        _ => false,
+    }
+}
+
+fn is_two_char_operator(s: &[u8]) -> bool {
+    match s {
+        b"&&" | b"||" | b"==" | b"!=" | b"<=" | b">=" => true,
+        _ => false,
+    }
+}
+
+fn check_punctuation(c: u8) -> Option<TokenKind> {
+    match c {
+        b':' => Some(TokenKind::Colon),
+        b',' => Some(TokenKind::Comma),
+        b'.' => Some(TokenKind::Dot),
+        b'=' => Some(TokenKind::Equals),
+        b'{' => Some(TokenKind::LCurly),
+        b'(' => Some(TokenKind::LParen),
+        b'[' => Some(TokenKind::LSquare),
+        b'}' => Some(TokenKind::RCurly),
+        b')' => Some(TokenKind::RParen),
+        b']' => Some(TokenKind::RSquare),
+        b'\n' => Some(TokenKind::NewLine),
+        _ => None,
     }
 }

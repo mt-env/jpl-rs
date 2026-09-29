@@ -1,12 +1,19 @@
+use std::io::{self, BufWriter, Write};
+
 use crate::parser::ast::{
     BinOp, Cmd, ExprKind, LValue, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt, ParsedType,
     Stmt, Type, UnOp,
 };
 
-pub fn print_sexp(ast: Vec<&ParsedCmd<'_, '_>>) {
+pub fn print_sexp(ast: Vec<&ParsedCmd<'_, '_>>) -> io::Result<()> {
+    let stdout = io::stdout();
+    let handle = stdout.lock();
+    let mut writer = BufWriter::new(handle);
     for cmd in ast {
-        println!("{cmd}");
+        writeln!(writer, "{cmd}")?;
     }
+    writer.flush()?;
+    Ok(())
 }
 
 impl std::fmt::Display for ParsedCmd<'_, '_> {
@@ -55,6 +62,7 @@ impl std::fmt::Display for ParsedExpr<'_, '_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.value.kind {
             ExprKind::Int(i) => write!(f, "(IntExpr {i})"),
+            #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
             ExprKind::Float(fl) => write!(f, "(FloatExpr {})", *fl as i64),
             ExprKind::Bool(b) => {
                 if *b {
