@@ -30,17 +30,21 @@ static KEYWORDS: phf::Map<&[u8], TokenKind> = phf::phf_map! {
     b"write" => TokenKind::Write
 };
 
-const PUNCTUATION: [(&[u8], TokenKind); 8] = [
-    (b":", TokenKind::Colon),
-    (b",", TokenKind::Comma),
-    (b"{", TokenKind::LCurly),
-    (b"(", TokenKind::LParen),
-    (b"[", TokenKind::LSquare),
-    (b"}", TokenKind::RCurly),
-    (b")", TokenKind::RParen),
-    (b"]", TokenKind::RSquare),
-];
 
+// one character punctuation tokens
+const PUNCTUATION: phf::Map<u8, TokenKind> = phf::phf_map! {
+    b':'=> TokenKind::Colon,
+    b','=> TokenKind::Comma,
+    b'.'=> TokenKind::Dot,
+    b'=' => TokenKind::Equals,
+    b'{'=> TokenKind::LCurly,
+    b'('=> TokenKind::LParen,
+    b'['=> TokenKind::LSquare,
+    b'}'=> TokenKind::RCurly,
+    b')'=> TokenKind::RParen,
+    b']'=> TokenKind::RSquare,
+    b'\n'=> TokenKind::NewLine,
+};
 const OPERATORS: [(&[u8], TokenKind); 16] = [
     (b"&&", TokenKind::Op),
     (b"||", TokenKind::Op),
@@ -57,7 +61,6 @@ const OPERATORS: [(&[u8], TokenKind); 16] = [
     (b"!", TokenKind::Op),
     (b".", TokenKind::Dot),
     (b"%", TokenKind::Op),
-    (b"=", TokenKind::Equals),
 ];
 
 pub fn lex(program: &[u8]) -> Result<Vec<Token<'_>>, Vec<LexError>> {
@@ -118,6 +121,17 @@ impl<'src> Lexer<'src> {
 
         if self.program.starts_with(b"/*") {
             self.skip_block_comment();
+            return;
+        }
+
+        // lex punctuation - must be done after operators because some punctuation (e.g. '=') can
+        // be part of an operator
+        if let Some(tokenkind) = PUNCTUATION.get(curr_char) {
+            let start = self.curr_pos;
+            let end = self.curr_pos + 1;
+            self.tokens
+                .push(Token::from_u8(*tokenkind, start, &self.program[start..end]));
+            self.curr_pos = end;
             return;
         }
 
