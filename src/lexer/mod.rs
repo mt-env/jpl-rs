@@ -127,6 +127,11 @@ impl<'src> Lexer<'src> {
             return;
         }
 
+        if *curr_char == b'"' {
+            self.lex_string_literal();
+            return;
+        }
+
         // delegate based on the first two characters
         // comments and two character operators must be checked first
         if let Some(two_char) = self.program.get(self.curr_pos..self.curr_pos + 2) {
@@ -219,6 +224,36 @@ impl<'src> Lexer<'src> {
         };
         self.tokens
             .push(Token::from_u8(tokenkind, start, token_str));
+        self.curr_pos = end;
+    }
+
+    fn lex_string_literal(&mut self) {
+        let start = self.curr_pos;
+        let mut end = start + 1;
+        loop {
+            let Some(&c) = self.program.get(end) else {
+                self.errors
+                    .push(LexError::new(start, LexErrorKind::UnterminatedString));
+                break;
+            };
+            if !valid_char(c) {
+                self.errors
+                    .push(LexError::new(end, LexErrorKind::IllegalByte(c)));
+            }
+            if c == b'"' {
+                end += 1;
+                break;
+            }
+            if c == b'\n' {
+                self.errors
+                    .push(LexError::new(start, LexErrorKind::UnterminatedString));
+                break;
+            }
+            end += 1;
+        }
+        let token_str = &self.program[start..end];
+        self.tokens
+            .push(Token::from_u8(TokenKind::String, start, token_str));
         self.curr_pos = end;
     }
 
