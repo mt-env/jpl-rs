@@ -109,7 +109,23 @@ impl<'src> Lexer<'src> {
             return;
         };
 
-        // check for alphanumeric identifiers and keywords first
+        // check for illegal bytes first
+        if !valid_char(*curr_char) {
+            self.errors.push(LexError::new(
+                self.curr_pos,
+                LexErrorKind::IllegalByte(*curr_char),
+            ));
+            self.curr_pos += 1;
+            return;
+        }
+
+        // eat whitespace
+        if *curr_char == b' ' {
+            self.curr_pos += 1;
+            return;
+        }
+
+        // check for alphanumeric identifiers and keywords
         if curr_char.is_ascii_alphabetic() {
             self.lex_alpha();
             return;
@@ -185,7 +201,12 @@ impl<'src> Lexer<'src> {
             return;
         }
 
-        todo!("delegate to helpers based on first char")
+        // if we reach here, we have an illegal character
+        self.errors.push(LexError::new(
+            self.curr_pos,
+            LexErrorKind::IllegalByte(*curr_char),
+        ));
+        self.curr_pos += 1;
     }
 
     fn lex_alpha(&mut self) {
