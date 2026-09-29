@@ -94,6 +94,12 @@ impl<'src> Lexer<'src> {
             self.next();
         }
 
+        // dedup newlines and add EoF token
+        self.tokens
+            .dedup_by(|a, b| a.kind == TokenKind::NewLine && b.kind == TokenKind::NewLine);
+        self.tokens
+            .push(Token::new(TokenKind::EndOfFile, self.curr_pos, ""));
+
         if self.errors.is_empty() {
             Ok(self.tokens)
         } else {
@@ -102,10 +108,8 @@ impl<'src> Lexer<'src> {
     }
 
     fn next(&mut self) {
-        // eof sentinel value
+        // return - add EoF in lex method
         let Some(curr_char) = self.program.get(self.curr_pos) else {
-            self.tokens
-                .push(Token::new(TokenKind::EndOfFile, self.curr_pos, ""));
             return;
         };
 
@@ -160,6 +164,12 @@ impl<'src> Lexer<'src> {
             // block comment
             if two_char == b"/*" {
                 self.skip_block_comment();
+                return;
+            }
+
+            // escaped newline
+            if two_char == b"\\\n" {
+                self.curr_pos += 2;
                 return;
             }
 
@@ -286,7 +296,7 @@ impl<'src> Lexer<'src> {
                     .push(LexError::new(start + i, LexErrorKind::IllegalByte(*c)));
             }
             if *c == b'\n' {
-                self.curr_pos = start + i + 1;
+                self.curr_pos = start + i;
                 return;
             }
         }

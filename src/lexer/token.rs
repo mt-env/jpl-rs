@@ -1,10 +1,10 @@
 use crate::Spanned;
 
 #[derive(Clone, Copy)]
-pub struct Token<'a> {
+pub struct Token<'src> {
     pub kind: TokenKind,
     pub offset: usize,
-    pub str: &'a str,
+    pub str: &'src str,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -62,14 +62,14 @@ pub enum TokenKind {
     NewLine,
 }
 
-impl<'a> Token<'a> {
+impl<'src> Token<'src> {
     #[must_use]
-    pub const fn new(kind: TokenKind, offset: usize, str: &'a str) -> Self {
+    pub const fn new(kind: TokenKind, offset: usize, str: &'src str) -> Self {
         Token { kind, offset, str }
     }
 
     #[must_use]
-    pub const fn from_u8(kind: TokenKind, offset: usize, bytes: &'a [u8]) -> Self {
+    pub const fn from_u8(kind: TokenKind, offset: usize, bytes: &'src [u8]) -> Self {
         Token {
             kind,
             offset,
