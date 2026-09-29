@@ -115,6 +115,18 @@ impl<'src> Lexer<'src> {
             return;
         }
 
+        // check for int/float literals. floats can start with a dot, yay -_-
+        if curr_char.is_ascii_digit()
+            || (*curr_char == b'.'
+                && self
+                    .program
+                    .get(self.curr_pos + 1)
+                    .is_some_and(u8::is_ascii_digit))
+        {
+            self.lex_numeric();
+            return;
+        }
+
         // delegate based on the first two characters
         // comments and two character operators must be checked first
         if let Some(two_char) = self.program.get(self.curr_pos..self.curr_pos + 2) {
@@ -182,6 +194,31 @@ impl<'src> Lexer<'src> {
         let tokenkind = KEYWORDS.get(token_str).unwrap_or(&TokenKind::Variable);
         self.tokens
             .push(Token::from_u8(*tokenkind, start, token_str));
+        self.curr_pos = end;
+    }
+
+    fn lex_numeric(&mut self) {
+        let start = self.curr_pos;
+        let mut end = start;
+        let mut has_dot = false;
+        loop {
+            match self.program.get(end) {
+                Some(b'0'..=b'9') => end += 1,
+                Some(b'.') if !has_dot => {
+                    has_dot = true;
+                    end += 1;
+                }
+                _ => break,
+            }
+        }
+        let token_str = &self.program[start..end];
+        let tokenkind = if has_dot {
+            TokenKind::FloatVal
+        } else {
+            TokenKind::IntVal
+        };
+        self.tokens
+            .push(Token::from_u8(tokenkind, start, token_str));
         self.curr_pos = end;
     }
 
