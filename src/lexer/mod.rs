@@ -2,67 +2,6 @@ use crate::lexer::token::{LexError, LexErrorKind, Token, TokenKind};
 
 pub mod token;
 
-static KEYWORDS: phf::Map<&[u8], TokenKind> = phf::phf_map! {
-    b"array" => TokenKind::Array,
-    b"assert" => TokenKind::Assert,
-    b"bool" => TokenKind::BoolType,
-    b"else" => TokenKind::Else,
-    b"false" => TokenKind::False,
-    b"float" => TokenKind::FloatType,
-    b"fn" => TokenKind::Fn,
-    b"if" => TokenKind::If,
-    b"image" => TokenKind::Image,
-    b"int" => TokenKind::IntType,
-    b"let" => TokenKind::Let,
-    b"print" => TokenKind::Print,
-    b"read" => TokenKind::Read,
-    b"return" => TokenKind::Return,
-    b"show" => TokenKind::Show,
-    b"struct" => TokenKind::Struct,
-    b"sum" => TokenKind::Sum,
-    b"then" => TokenKind::Then,
-    b"time" => TokenKind::Time,
-    b"to" => TokenKind::To,
-    b"true" => TokenKind::True,
-    b"void" => TokenKind::Void,
-    b"write" => TokenKind::Write
-};
-
-const TWO_CHAR_OPERATORS: phf::Set<&[u8]> = phf::phf_set! {
-    b"&&",
-    b"||",
-    b"==",
-    b"!=",
-    b"<=",
-    b">=",
-};
-
-const ONE_CHAR_OPERATORS: phf::Set<u8> = phf::phf_set! {
-    b'+',
-    b'-',
-    b'*',
-    b'/',
-    b'<',
-    b'>',
-    b'!',
-    b'%',
-};
-
-// one character punctuation tokens
-const PUNCTUATION: phf::Map<u8, TokenKind> = phf::phf_map! {
-    b':'=> TokenKind::Colon,
-    b','=> TokenKind::Comma,
-    b'.'=> TokenKind::Dot,
-    b'=' => TokenKind::Equals,
-    b'{'=> TokenKind::LCurly,
-    b'('=> TokenKind::LParen,
-    b'['=> TokenKind::LSquare,
-    b'}'=> TokenKind::RCurly,
-    b')'=> TokenKind::RParen,
-    b']'=> TokenKind::RSquare,
-    b'\n'=> TokenKind::NewLine,
-};
-
 pub fn lex(program: &[u8]) -> Result<Vec<Token<'_>>, Vec<LexError>> {
     Lexer::new(program).lex()
 }
@@ -174,7 +113,7 @@ impl<'src> Lexer<'src> {
             }
 
             // two character operators
-            if TWO_CHAR_OPERATORS.contains(two_char) {
+            if is_two_char_operator(two_char) {
                 let start = self.curr_pos;
                 let end = self.curr_pos + 2;
                 self.tokens.push(Token::from_u8(
@@ -188,7 +127,7 @@ impl<'src> Lexer<'src> {
         }
 
         // one char operators
-        if ONE_CHAR_OPERATORS.contains(curr_char) {
+        if is_one_char_operator(*curr_char) {
             let start = self.curr_pos;
             let end = self.curr_pos + 1;
             self.tokens.push(Token::from_u8(
@@ -202,11 +141,11 @@ impl<'src> Lexer<'src> {
 
         // punctuation - must be done after operators because some punctuation (e.g. '=') can be part of an operator
         // also must be done after numbers because numbers can start with a dot
-        if let Some(tokenkind) = PUNCTUATION.get(curr_char) {
+        if let Some(tokenkind) = check_punctuation(*curr_char) {
             let start = self.curr_pos;
             let end = self.curr_pos + 1;
             self.tokens
-                .push(Token::from_u8(*tokenkind, start, &self.program[start..end]));
+                .push(Token::from_u8(tokenkind, start, &self.program[start..end]));
             self.curr_pos = end;
             return;
         }
@@ -227,9 +166,9 @@ impl<'src> Lexer<'src> {
             .map(|pos| start + pos)
             .unwrap_or(self.program.len());
         let token_str = &self.program[start..end];
-        let tokenkind = KEYWORDS.get(token_str).unwrap_or(&TokenKind::Variable);
+        let tokenkind = check_keyword(token_str);
         self.tokens
-            .push(Token::from_u8(*tokenkind, start, token_str));
+            .push(Token::from_u8(tokenkind, start, token_str));
         self.curr_pos = end;
     }
 
@@ -323,4 +262,79 @@ impl<'src> Lexer<'src> {
 
 fn valid_char(c: u8) -> bool {
     (c >= 32 && c <= 126) || c == 10
+}
+
+fn check_keyword(token_str: &[u8]) -> TokenKind {
+    match token_str.len() {
+        2 => match token_str {
+            b"fn" => TokenKind::Fn,
+            b"if" => TokenKind::If,
+            b"to" => TokenKind::To,
+            _ => TokenKind::Variable,
+        },
+        3 => match token_str {
+            b"int" => TokenKind::IntType,
+            b"let" => TokenKind::Let,
+            b"sum" => TokenKind::Sum,
+            _ => TokenKind::Variable,
+        },
+        4 => match token_str {
+            b"bool" => TokenKind::BoolType,
+            b"else" => TokenKind::Else,
+            b"read" => TokenKind::Read,
+            b"show" => TokenKind::Show,
+            b"then" => TokenKind::Then,
+            b"time" => TokenKind::Time,
+            b"true" => TokenKind::True,
+            b"void" => TokenKind::Void,
+            _ => TokenKind::Variable,
+        },
+        5 => match token_str {
+            b"array" => TokenKind::Array,
+            b"false" => TokenKind::False,
+            b"float" => TokenKind::FloatType,
+            b"image" => TokenKind::Image,
+            b"print" => TokenKind::Print,
+            b"write" => TokenKind::Write,
+            _ => TokenKind::Variable,
+        },
+        6 => match token_str {
+            b"assert" => TokenKind::Assert,
+            b"return" => TokenKind::Return,
+            b"struct" => TokenKind::Struct,
+            _ => TokenKind::Variable,
+        },
+        _ => TokenKind::Variable,
+    }
+}
+
+fn is_one_char_operator(c: u8) -> bool {
+    match c {
+        b'+' | b'-' | b'*' | b'/' | b'<' | b'>' | b'!' | b'%' => true,
+        _ => false,
+    }
+}
+
+fn is_two_char_operator(s: &[u8]) -> bool {
+    match s {
+        b"&&" | b"||" | b"==" | b"!=" | b"<=" | b">=" => true,
+        _ => false,
+    }
+}
+
+fn check_punctuation(c: u8) -> Option<TokenKind> {
+    match c {
+        b':' => Some(TokenKind::Colon),
+        b',' => Some(TokenKind::Comma),
+        b'.' => Some(TokenKind::Dot),
+        b'=' => Some(TokenKind::Equals),
+        b'{' => Some(TokenKind::LCurly),
+        b'(' => Some(TokenKind::LParen),
+        b'[' => Some(TokenKind::LSquare),
+        b'}' => Some(TokenKind::RCurly),
+        b')' => Some(TokenKind::RParen),
+        b']' => Some(TokenKind::RSquare),
+        b'\n' => Some(TokenKind::NewLine),
+        _ => None,
+    }
 }
