@@ -35,6 +35,11 @@ pub fn run() -> ExitCode {
         }
     };
 
+    if mode == Some(Mode::LexNoPrint) {
+        println!("Compilation succeeded: lexical analysis complete");
+        return ExitCode::from(0);
+    }
+
     if mode == Some(Mode::Lex) {
         if print::lex::print_tokens(tokens).is_err() {
             println!("Compilation failed: could not print tokens");
@@ -101,6 +106,7 @@ fn parse_args() -> Result<Config, CliError> {
             }
             match argument.as_str() {
                 "-l" => mode = Some(Mode::Lex),
+                "-_" => mode = Some(Mode::LexNoPrint),
                 "-p" => mode = Some(Mode::Parse),
                 "-t" => mode = Some(Mode::Typecheck),
                 "-i" => mode = Some(Mode::IR),
@@ -130,6 +136,7 @@ pub struct Config {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Mode {
     Lex,
+    LexNoPrint,
     Parse,
     Typecheck,
     IR,
