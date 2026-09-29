@@ -27,7 +27,9 @@ pub fn run() -> ExitCode {
     let tokens = match lexer::lex(&program) {
         Ok(tokens) => tokens,
         Err(lex_errors) => {
-            error::lex::print_lex_errors(lex_errors, &program);
+            if error::lex::print_lex_errors(lex_errors, &program).is_err() {
+                println!("Compilation failed: could not print lex errors");
+            }
             println!("Compilation failed: lexical analysis failed");
             return ExitCode::from(1);
         }
@@ -46,7 +48,9 @@ pub fn run() -> ExitCode {
     let parsed_program = match parser::parse(&ast_alloc, tokens) {
         Ok(parsed_program) => parsed_program,
         Err(parse_errors) => {
-            error::parse::print_parse_error(parse_errors, &program);
+            if error::parse::print_parse_error(parse_errors, &program).is_err() {
+                println!("Compilation failed: could not print parse errors");
+            }
             println!("Compilation failed: parsing failed");
             return ExitCode::from(1);
         }
@@ -65,7 +69,9 @@ pub fn run() -> ExitCode {
     let typed_program = match typechecker::typecheck(&typeck_alloc, parsed_program) {
         Ok(typed_program) => typed_program,
         Err(type_errors) => {
-            error::typecheck::print_type_error(type_errors, &program);
+            if error::typecheck::print_type_error(type_errors, &program).is_err() {
+                println!("Compilation failed: could not print type errors");
+            }
             println!("Compilation failed: typechecking failed");
             return ExitCode::from(1);
         }

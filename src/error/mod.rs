@@ -1,3 +1,5 @@
+use std::io::Write;
+
 pub mod lex;
 pub mod parse;
 pub mod typecheck;
@@ -19,7 +21,11 @@ fn get_line_and_column(program: &[u8], pos: usize) -> (usize, usize) {
     (line, column)
 }
 
-fn show_line_with_error(program: &[u8], pos: usize) {
+fn show_line_with_error(
+    writer: &mut impl Write,
+    program: &[u8],
+    pos: usize,
+) -> std::io::Result<()> {
     let (line, column) = get_line_and_column(program, pos);
     let line_start = program[..pos]
         .iter()
@@ -31,10 +37,11 @@ fn show_line_with_error(program: &[u8], pos: usize) {
         .map_or(program.len(), |i| pos + i);
     let line_content =
         String::from_utf8_lossy(program.get(line_start..line_end).unwrap_or_default()); // TODO
-    println!("{line} | {line_content}");
-    println!(
+    writeln!(writer, "{line} | {line_content}")?;
+    writeln!(
+        writer,
         "{} | {}^",
         " ".repeat(line.to_string().len()),
         " ".repeat(column - 1)
-    );
+    )
 }
