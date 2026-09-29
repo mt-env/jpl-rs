@@ -1,5 +1,3 @@
-use core::str;
-
 use crate::lexer::token::{LexError, LexErrorKind, Token, TokenKind};
 
 pub mod token;
@@ -30,6 +28,25 @@ static KEYWORDS: phf::Map<&[u8], TokenKind> = phf::phf_map! {
     b"write" => TokenKind::Write
 };
 
+const TWO_CHAR_OPERATORS: phf::Set<&[u8]> = phf::phf_set! {
+    b"&&",
+    b"||",
+    b"==",
+    b"!=",
+    b"<=",
+    b">=",
+};
+
+const ONE_CHAR_OPERATORS: phf::Set<u8> = phf::phf_set! {
+    b'+',
+    b'-',
+    b'*',
+    b'/',
+    b'<',
+    b'>',
+    b'!',
+    b'%',
+};
 
 // one character punctuation tokens
 const PUNCTUATION: phf::Map<u8, TokenKind> = phf::phf_map! {
@@ -45,23 +62,6 @@ const PUNCTUATION: phf::Map<u8, TokenKind> = phf::phf_map! {
     b']'=> TokenKind::RSquare,
     b'\n'=> TokenKind::NewLine,
 };
-const OPERATORS: [(&[u8], TokenKind); 16] = [
-    (b"&&", TokenKind::Op),
-    (b"||", TokenKind::Op),
-    (b"==", TokenKind::Op),
-    (b"!=", TokenKind::Op),
-    (b"<=", TokenKind::Op),
-    (b">=", TokenKind::Op),
-    (b"+", TokenKind::Op),
-    (b"-", TokenKind::Op),
-    (b"*", TokenKind::Op),
-    (b"/", TokenKind::Op),
-    (b"<", TokenKind::Op),
-    (b">", TokenKind::Op),
-    (b"!", TokenKind::Op),
-    (b".", TokenKind::Dot),
-    (b"%", TokenKind::Op),
-];
 
 pub fn lex(program: &[u8]) -> Result<Vec<Token<'_>>, Vec<LexError>> {
     Lexer::new(program).lex()
@@ -109,23 +109,56 @@ impl<'src> Lexer<'src> {
             return;
         };
 
+        // check for alphanumeric identifiers and keywords first
         if curr_char.is_ascii_alphabetic() {
             self.lex_alpha();
             return;
         }
 
-        if self.program.starts_with(b"//") {
-            self.skip_line_comment();
+        // delegate based on the first two characters
+        // comments and two character operators must be checked first
+        if let Some(two_char) = self.program.get(self.curr_pos..self.curr_pos + 2) {
+            // line comment
+            if two_char == b"//" {
+                self.skip_line_comment();
+                return;
+            }
+
+            // block comment
+            if two_char == b"/*" {
+                self.skip_block_comment();
+                return;
+            }
+
+            // two character operators
+            if TWO_CHAR_OPERATORS.contains(two_char) {
+                let start = self.curr_pos;
+                let end = self.curr_pos + 2;
+                self.tokens.push(Token::from_u8(
+                    TokenKind::Op,
+                    start,
+                    &self.program[start..end],
+                ));
+                self.curr_pos = end;
+                return;
+            }
+        }
+
+        // one char operators
+        if ONE_CHAR_OPERATORS.contains(curr_char) {
+            let start = self.curr_pos;
+            let end = self.curr_pos + 1;
+            self.tokens.push(Token::from_u8(
+                TokenKind::Op,
+                start,
+                &self.program[start..end],
+            ));
+            self.curr_pos = end;
             return;
         }
 
-        if self.program.starts_with(b"/*") {
-            self.skip_block_comment();
-            return;
-        }
-
-        // lex punctuation - must be done after operators because some punctuation (e.g. '=') can
-        // be part of an operator
+        // punctuation - must be done after operators because some punctuation (e.g. '=') can be part of an operator
+        // also must be done after numbers because numbers can start with a dot
         if let Some(tokenkind) = PUNCTUATION.get(curr_char) {
             let start = self.curr_pos;
             let end = self.curr_pos + 1;
