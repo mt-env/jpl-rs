@@ -14,7 +14,7 @@ struct Lexer<'src> {
 }
 
 impl<'src> Lexer<'src> {
-    fn new(program: &'src [u8]) -> Self {
+    const fn new(program: &'src [u8]) -> Self {
         Self {
             program,
             curr_pos: 0,
@@ -23,7 +23,7 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn at_end(&self) -> bool {
+    const fn at_end(&self) -> bool {
         self.curr_pos >= self.program.len()
     }
 
@@ -169,8 +169,7 @@ impl<'src> Lexer<'src> {
         let end = self.program[start..]
             .iter()
             .position(|&c| !(c.is_ascii_alphanumeric() || c == b'_'))
-            .map(|pos| start + pos)
-            .unwrap_or(self.program.len());
+            .map_or(self.program.len(), |pos| start + pos);
         let token_str = &self.program[start..end];
         let tokenkind = check_keyword(token_str);
         self.tokens
@@ -266,11 +265,11 @@ impl<'src> Lexer<'src> {
     }
 }
 
-fn valid_char(c: u8) -> bool {
+const fn valid_char(c: u8) -> bool {
     (c >= 32 && c <= 126) || c == 10
 }
 
-fn check_keyword(token_str: &[u8]) -> TokenKind {
+const fn check_keyword(token_str: &[u8]) -> TokenKind {
     match token_str.len() {
         2 => match token_str {
             b"fn" => TokenKind::Fn,
@@ -314,21 +313,15 @@ fn check_keyword(token_str: &[u8]) -> TokenKind {
     }
 }
 
-fn is_one_char_operator(c: u8) -> bool {
-    match c {
-        b'+' | b'-' | b'*' | b'/' | b'<' | b'>' | b'!' | b'%' => true,
-        _ => false,
-    }
+const fn is_one_char_operator(c: u8) -> bool {
+    matches!(c, b'+' | b'-' | b'*' | b'/' | b'<' | b'>' | b'!' | b'%')
 }
 
-fn is_two_char_operator(s: &[u8]) -> bool {
-    match s {
-        b"&&" | b"||" | b"==" | b"!=" | b"<=" | b">=" => true,
-        _ => false,
-    }
+const fn is_two_char_operator(s: &[u8]) -> bool {
+    matches!(s, b"&&" | b"||" | b"==" | b"!=" | b"<=" | b">=")
 }
 
-fn check_punctuation(c: u8) -> Option<TokenKind> {
+const fn check_punctuation(c: u8) -> Option<TokenKind> {
     match c {
         b':' => Some(TokenKind::Colon),
         b',' => Some(TokenKind::Comma),
