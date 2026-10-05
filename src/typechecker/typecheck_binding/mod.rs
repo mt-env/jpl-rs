@@ -15,7 +15,7 @@ pub(super) fn typecheck_binding<'src, 'old, 'new>(
     let typed_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, binding.value.lvalue);
     let typed_type = typecheck_type::typecheck_type(ctx, binding.value.ty)?;
 
-    Ok(TypedBinding::make_typed(
+    Ok(TypedBinding::new_ref(
         ctx,
         loc,
         Binding {

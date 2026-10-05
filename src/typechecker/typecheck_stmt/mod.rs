@@ -30,7 +30,7 @@ fn typecheck_let<'src, 'old, 'new>(
     let resolved_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue);
     let expr_tyval = resolved_expr.value.ann;
     typecheck_lvalue::bind_lvalue(ctx, resolved_lvalue, expr_tyval)?;
-    Ok(TypedStmt::new(
+    Ok(TypedStmt::new_ref(
         ctx,
         offset,
         Stmt::Let(resolved_lvalue, resolved_expr),
@@ -44,7 +44,11 @@ fn typecheck_assert<'src, 'old, 'new>(
     msg: &'src str,
 ) -> Result<&'new TypedStmt<'src, 'new>, TypeError<'src, 'new>> {
     let typed_expr = typecheck_expr::check(ctx, expr, &TypeValue::Bool)?;
-    Ok(TypedStmt::new(ctx, offset, Stmt::Assert(typed_expr, msg)))
+    Ok(TypedStmt::new_ref(
+        ctx,
+        offset,
+        Stmt::Assert(typed_expr, msg),
+    ))
 }
 
 fn typecheck_return<'src, 'old, 'new>(
@@ -54,5 +58,5 @@ fn typecheck_return<'src, 'old, 'new>(
     expected_ret_tyval: &'new TypeValue<'src, 'new>,
 ) -> Result<&'new TypedStmt<'src, 'new>, TypeError<'src, 'new>> {
     let resolved_expr = typecheck_expr::check(ctx, expr, expected_ret_tyval)?;
-    Ok(TypedStmt::new(ctx, offset, Stmt::Return(resolved_expr)))
+    Ok(TypedStmt::new_ref(ctx, offset, Stmt::Return(resolved_expr)))
 }

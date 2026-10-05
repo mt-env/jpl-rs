@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use bumpalo::Bump;
 
-use crate::typechecker::ast::{TypeError, TypeErrorKind, TypeValue};
+use crate::{
+    Allocator,
+    typechecker::ast::{TypeError, TypeErrorKind, TypeValue},
+};
 
 pub(super) enum NameInfo<'src, 'ast> {
     Value(&'ast TypeValue<'src, 'ast>),
@@ -106,10 +109,6 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
         current
     }
 
-    pub(super) fn alloc<A>(&self, value: A) -> &'ast A {
-        self.alloc.alloc(value)
-    }
-
     pub(super) fn add_struct_info(
         &mut self,
         name: &'src str,
@@ -168,5 +167,11 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
             });
         }
         Ok(())
+    }
+}
+
+impl<'ast> Allocator<'ast> for TypecheckCtx<'_, 'ast> {
+    fn alloc<T>(&self, value: T) -> &'ast T {
+        self.alloc.alloc(value)
     }
 }

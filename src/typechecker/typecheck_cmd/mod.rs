@@ -40,7 +40,7 @@ fn typecheck_show<'src, 'old, 'new>(
     expr: &'old ParsedExpr<'src, 'old>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     let typed_expr = typecheck_expr::infer(ctx, expr)?;
-    Ok(TypedCmd::new(ctx, offset, Cmd::Show(typed_expr)))
+    Ok(TypedCmd::new_ref(ctx, offset, Cmd::Show(typed_expr)))
 }
 
 fn typecheck_struct<'src, 'old, 'new>(
@@ -69,7 +69,7 @@ fn typecheck_struct<'src, 'old, 'new>(
         resolved_fields.push((field.value.name, resolved_tyval));
         // copy the field name and type into the new arena allocator
         let field_type = typecheck_type::typecheck_type(ctx, field.value.ty)?;
-        typed_fields.push(TypedStructField::make_typed(
+        typed_fields.push(TypedStructField::new_ref(
             ctx,
             offset,
             StructField {
@@ -79,7 +79,7 @@ fn typecheck_struct<'src, 'old, 'new>(
         ));
     }
     ctx.add_struct_info(name, resolved_fields);
-    Ok(TypedCmd::new(
+    Ok(TypedCmd::new_ref(
         ctx,
         offset,
         Cmd::Struct {
@@ -104,7 +104,11 @@ fn typecheck_read<'src, 'new>(
         },
     );
     typecheck_lvalue::bind_lvalue(ctx, typed_lvalue, rgba2d)?;
-    Ok(TypedCmd::new(ctx, offset, Cmd::Read(name, typed_lvalue)))
+    Ok(TypedCmd::new_ref(
+        ctx,
+        offset,
+        Cmd::Read(name, typed_lvalue),
+    ))
 }
 
 fn typecheck_write<'src, 'old, 'new>(
@@ -121,7 +125,7 @@ fn typecheck_write<'src, 'old, 'new>(
         },
     );
     let typed_expr = typecheck_expr::check(ctx, expr, rgba2d)?;
-    Ok(TypedCmd::new(ctx, offset, Cmd::Write(typed_expr, name)))
+    Ok(TypedCmd::new_ref(ctx, offset, Cmd::Write(typed_expr, name)))
 }
 
 fn typecheck_let<'src, 'old, 'new>(
@@ -133,7 +137,7 @@ fn typecheck_let<'src, 'old, 'new>(
     let typed_lvalue = typecheck_lvalue::typecheck_lvalue(ctx, lvalue);
     let typed_expr = typecheck_expr::infer(ctx, expr)?;
     typecheck_lvalue::bind_lvalue(ctx, typed_lvalue, typed_expr.value.ann)?;
-    Ok(TypedCmd::new(
+    Ok(TypedCmd::new_ref(
         ctx,
         offset,
         Cmd::Let(typed_lvalue, typed_expr),
@@ -147,7 +151,7 @@ fn typecheck_assert<'src, 'old, 'new>(
     msg: &'src str,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     let typed_expr = typecheck_expr::check(ctx, expr, &TypeValue::Bool)?;
-    Ok(TypedCmd::new(ctx, offset, Cmd::Assert(typed_expr, msg)))
+    Ok(TypedCmd::new_ref(ctx, offset, Cmd::Assert(typed_expr, msg)))
 }
 
 fn typecheck_print<'src, 'new>(
@@ -155,7 +159,7 @@ fn typecheck_print<'src, 'new>(
     offset: usize,
     msg: &'src str,
 ) -> &'new TypedCmd<'src, 'new> {
-    TypedCmd::new(ctx, offset, Cmd::Print(msg))
+    TypedCmd::new_ref(ctx, offset, Cmd::Print(msg))
 }
 
 fn typecheck_time<'src, 'old, 'new>(
@@ -164,7 +168,7 @@ fn typecheck_time<'src, 'old, 'new>(
     cmd: &'old ParsedCmd<'src, 'old>,
 ) -> Result<&'new TypedCmd<'src, 'new>, TypeError<'src, 'new>> {
     let typed_cmd = typecheck_cmd(ctx, cmd)?;
-    Ok(TypedCmd::new(ctx, offset, Cmd::Time(typed_cmd)))
+    Ok(TypedCmd::new_ref(ctx, offset, Cmd::Time(typed_cmd)))
 }
 
 fn typecheck_fn<'src, 'old, 'new>(
@@ -219,7 +223,7 @@ fn typecheck_fn<'src, 'old, 'new>(
     // goodbye function body scope
     ctx.pop_scope();
 
-    Ok(TypedCmd::new(
+    Ok(TypedCmd::new_ref(
         ctx,
         offset,
         Cmd::Fn {

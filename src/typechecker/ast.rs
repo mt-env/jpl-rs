@@ -1,5 +1,5 @@
 use crate::{
-    Spanned,
+    Allocator, Spanned,
     parser::ast::{Binding, Cmd, Expr, ExprKind, LValue, LoopIterVar, Stmt, StructField, Type},
     typechecker::typecheck_ctx::TypecheckCtx,
 };
@@ -30,20 +30,8 @@ pub type TypedStructField<'src, 'ast> = Spanned<StructField<'src, 'ast>>;
 pub type TypedLoopIterVar<'src, 'ast> =
     Spanned<LoopIterVar<'src, 'ast, &'ast TypeValue<'src, 'ast>>>;
 
-pub type TypeError<'src, 'ast> = Spanned<TypeErrorKind<'src, 'ast>>;
-
-impl<'src, 'ast> TypedCmd<'src, 'ast> {
-    pub(super) fn new(
-        ctx: &TypecheckCtx<'src, 'ast>,
-        offset: usize,
-        cmd: Cmd<'src, 'ast, &'ast TypeValue<'src, 'ast>>,
-    ) -> &'ast Self {
-        ctx.alloc(Spanned { offset, value: cmd })
-    }
-}
-
 impl<'src, 'ast> TypedExpr<'src, 'ast> {
-    pub(super) fn new(
+    pub(super) fn from(
         ctx: &TypecheckCtx<'src, 'ast>,
         offset: usize,
         kind: ExprKind<'src, 'ast, &'ast TypeValue<'src, 'ast>>,
@@ -51,85 +39,12 @@ impl<'src, 'ast> TypedExpr<'src, 'ast> {
     ) -> &'ast Self {
         ctx.alloc(Spanned {
             offset,
-            value: Expr { ann: ty, kind },
+            value: Expr { kind, ann: ty },
         })
     }
 }
 
-impl<'src, 'ast> TypedLValue<'src> {
-    pub(super) fn make_typed(
-        ctx: &TypecheckCtx<'src, 'ast>,
-        offset: usize,
-        lvalue: LValue<'src>,
-    ) -> &'ast Self {
-        ctx.alloc(Spanned {
-            offset,
-            value: lvalue,
-        })
-    }
-}
-
-impl<'src, 'ast> TypedType<'src, 'ast> {
-    pub(super) fn make_typed(
-        ctx: &TypecheckCtx<'src, 'ast>,
-        offset: usize,
-        ty: Type<'src, 'ast>,
-    ) -> &'ast Self {
-        ctx.alloc(Spanned { offset, value: ty })
-    }
-}
-
-impl<'src, 'ast> TypedStmt<'src, 'ast> {
-    pub(super) fn new(
-        ctx: &TypecheckCtx<'src, 'ast>,
-        offset: usize,
-        stmt: Stmt<'src, 'ast, &'ast TypeValue<'src, 'ast>>,
-    ) -> &'ast Self {
-        ctx.alloc(Spanned {
-            offset,
-            value: stmt,
-        })
-    }
-}
-
-impl<'src, 'ast> TypedBinding<'src, 'ast> {
-    pub(super) fn make_typed(
-        ctx: &TypecheckCtx<'src, 'ast>,
-        offset: usize,
-        binding: Binding<'src, 'ast>,
-    ) -> &'ast Self {
-        ctx.alloc(Spanned {
-            offset,
-            value: binding,
-        })
-    }
-}
-
-impl<'src, 'ast> TypedStructField<'src, 'ast> {
-    pub(super) fn make_typed(
-        ctx: &TypecheckCtx<'src, 'ast>,
-        offset: usize,
-        struct_field: StructField<'src, 'ast>,
-    ) -> &'ast Self {
-        ctx.alloc(Spanned {
-            offset,
-            value: struct_field,
-        })
-    }
-}
-
-impl<'src, 'ast> TypedLoopIterVar<'src, 'ast> {
-    pub(super) fn new(
-        ctx: &TypecheckCtx<'src, 'ast>,
-        offset: usize,
-        iter_var: LoopIterVar<'src, 'ast, &'ast TypeValue<'src, 'ast>>,
-    ) -> &'ast Self {
-        ctx.alloc(Spanned {
-            offset,
-            value: iter_var,
-        })
-    }
-}
+pub type TypeError<'src, 'ast> = Spanned<TypeErrorKind<'src, 'ast>>;
 
 pub enum TypeErrorKind<'src, 'ast> {
     ExpectType {

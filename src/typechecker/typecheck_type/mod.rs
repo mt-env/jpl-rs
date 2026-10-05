@@ -30,7 +30,7 @@ pub(super) fn typecheck_type<'src, 'old, 'new>(
         Type::Struct { name } => Type::Struct { name },
         Type::Void => Type::Void,
     };
-    Ok(TypedType::make_typed(ctx, *offset, copied_value))
+    Ok(TypedType::new_ref(ctx, *offset, copied_value))
 }
 
 pub(super) fn typevalue_of_type<'src, 'old, 'new>(

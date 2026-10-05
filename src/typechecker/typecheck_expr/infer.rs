@@ -1,3 +1,4 @@
+use crate::Allocator;
 use crate::{
     parser::ast::{BinOp, ExprKind, LoopIterVar, ParsedExpr, ParsedLoopIterVar, UnOp},
     typechecker::{
@@ -36,7 +37,7 @@ fn infer_int<'src, 'new>(
     offset: usize,
     val: i64,
 ) -> &'new TypedExpr<'src, 'new> {
-    TypedExpr::new(ctx, offset, ExprKind::Int(val), &TypeValue::Int)
+    TypedExpr::from(ctx, offset, ExprKind::Int(val), &TypeValue::Int)
 }
 
 fn infer_float<'src, 'new>(
@@ -44,7 +45,7 @@ fn infer_float<'src, 'new>(
     offset: usize,
     val: f64,
 ) -> &'new TypedExpr<'src, 'new> {
-    TypedExpr::new(ctx, offset, ExprKind::Float(val), &TypeValue::Float)
+    TypedExpr::from(ctx, offset, ExprKind::Float(val), &TypeValue::Float)
 }
 
 fn infer_bool<'src, 'new>(
@@ -52,7 +53,7 @@ fn infer_bool<'src, 'new>(
     offset: usize,
     val: bool,
 ) -> &'new TypedExpr<'src, 'new> {
-    TypedExpr::new(ctx, offset, ExprKind::Bool(val), &TypeValue::Bool)
+    TypedExpr::from(ctx, offset, ExprKind::Bool(val), &TypeValue::Bool)
 }
 
 fn infer_var<'src, 'new>(
@@ -74,14 +75,14 @@ fn infer_var<'src, 'new>(
         });
     };
 
-    Ok(TypedExpr::new(ctx, offset, ExprKind::Var(name), ty))
+    Ok(TypedExpr::from(ctx, offset, ExprKind::Var(name), ty))
 }
 
 fn infer_void<'src, 'new>(
     ctx: &TypecheckCtx<'src, 'new>,
     offset: usize,
 ) -> &'new TypedExpr<'src, 'new> {
-    TypedExpr::new(ctx, offset, ExprKind::Void, &TypeValue::Void)
+    TypedExpr::from(ctx, offset, ExprKind::Void, &TypeValue::Void)
 }
 
 fn infer_array_literal<'src, 'old, 'new>(
@@ -109,7 +110,7 @@ fn infer_array_literal<'src, 'old, 'new>(
     }
 
     // return the element
-    Ok(TypedExpr::new(
+    Ok(TypedExpr::from(
         ctx,
         offset,
         ExprKind::ArrayLiteral(typed_exprs),
@@ -160,7 +161,7 @@ fn infer_struct_literal<'src, 'old, 'new>(
         resolved_fields.push(resolved_field);
     }
 
-    Ok(TypedExpr::new(
+    Ok(TypedExpr::from(
         ctx,
         offset,
         ExprKind::StructLiteral(struct_name, resolved_fields),
@@ -200,7 +201,7 @@ fn infer_dot<'src, 'old, 'new>(
     // find field
     for (field, field_type) in struct_def {
         if *field == field_name {
-            return Ok(TypedExpr::new(
+            return Ok(TypedExpr::from(
                 ctx,
                 offset,
                 ExprKind::Dot(typed_struct_expr, field),
@@ -251,7 +252,7 @@ fn infer_array_index<'src, 'old, 'new>(
         typed_indices.push(typecheck_expr::check(ctx, index, &TypeValue::Int)?);
     }
 
-    Ok(TypedExpr::new(
+    Ok(TypedExpr::from(
         ctx,
         offset,
         ExprKind::ArrayIndex(typed_arr, ctx.alloc(typed_indices)),
@@ -300,7 +301,7 @@ fn infer_call<'src, 'old, 'new>(
         typed_args.push(typed_arg);
     }
 
-    Ok(TypedExpr::new(
+    Ok(TypedExpr::from(
         ctx,
         offset,
         ExprKind::Call(name, typed_args),
@@ -319,7 +320,7 @@ fn infer_if<'src, 'old, 'new>(
     let typed_thenb = infer(ctx, thenb)?;
     let ternary_type = typed_thenb.value.ann;
     let typed_elseb = typecheck_expr::check(ctx, elseb, ternary_type)?;
-    Ok(TypedExpr::new(
+    Ok(TypedExpr::from(
         ctx,
         offset,
         ExprKind::If(typed_cond, typed_thenb, typed_elseb),
@@ -347,7 +348,7 @@ fn infer_array_loop<'src, 'old, 'new>(
     let mut typed_bindings = Vec::new();
     for binding in bindings {
         let typed_expr = typecheck_expr::check(ctx, binding.value.expr, &TypeValue::Int)?;
-        typed_bindings.push(TypedLoopIterVar::new(
+        typed_bindings.push(TypedLoopIterVar::new_ref(
             ctx,
             offset,
             LoopIterVar {
@@ -376,7 +377,7 @@ fn infer_array_loop<'src, 'old, 'new>(
         },
     );
 
-    Ok(TypedExpr::new(
+    Ok(TypedExpr::from(
         ctx,
         offset,
         ExprKind::ArrayLoop(typed_bindings, typed_body),
@@ -404,7 +405,7 @@ fn infer_sum_loop<'src, 'old, 'new>(
     let mut typed_bindings = Vec::new();
     for binding in bindings {
         let typed_expr = typecheck_expr::check(ctx, binding.value.expr, &TypeValue::Int)?;
-        typed_bindings.push(TypedLoopIterVar::new(
+        typed_bindings.push(TypedLoopIterVar::new_ref(
             ctx,
             offset,
             LoopIterVar {
@@ -423,7 +424,7 @@ fn infer_sum_loop<'src, 'old, 'new>(
 
     ctx.pop_scope();
 
-    Ok(TypedExpr::new(
+    Ok(TypedExpr::from(
         ctx,
         offset,
         ExprKind::SumLoop(typed_bindings, typed_body),
@@ -441,7 +442,7 @@ fn infer_unop<'src, 'old, 'new>(
         UnOp::Neg => {
             let typed_inner = typecheck_expr::check_num(ctx, inner)?;
             let inner_type = typed_inner.value.ann;
-            Ok(TypedExpr::new(
+            Ok(TypedExpr::from(
                 ctx,
                 offset,
                 ExprKind::Unary(UnOp::Neg, typed_inner),
@@ -450,7 +451,7 @@ fn infer_unop<'src, 'old, 'new>(
         }
         UnOp::Not => {
             let typed_inner = typecheck_expr::check(ctx, inner, &TypeValue::Bool)?;
-            Ok(TypedExpr::new(
+            Ok(TypedExpr::from(
                 ctx,
                 offset,
                 ExprKind::Unary(UnOp::Not, typed_inner),
@@ -488,7 +489,7 @@ fn infer_arith_binop<'src, 'old, 'new>(
     let typed_left = typecheck_expr::check_num(ctx, left)?;
     let left_type = typed_left.value.ann;
     let typed_right = typecheck_expr::check(ctx, right, left_type)?;
-    Ok(TypedExpr::new(
+    Ok(TypedExpr::from(
         ctx,
         offset,
         ExprKind::Binary(typed_left, op, typed_right),
@@ -505,7 +506,7 @@ fn infer_logic_binop<'src, 'old, 'new>(
 ) -> Result<&'new TypedExpr<'src, 'new>, TypeError<'src, 'new>> {
     let typed_left = typecheck_expr::check(ctx, left, &TypeValue::Bool)?;
     let typed_right = typecheck_expr::check(ctx, right, &TypeValue::Bool)?;
-    Ok(TypedExpr::new(
+    Ok(TypedExpr::from(
         ctx,
         offset,
         ExprKind::Binary(typed_left, op, typed_right),
@@ -523,7 +524,7 @@ fn infer_cmp_binop<'src, 'old, 'new>(
     let typed_left = typecheck_expr::check_primitive(ctx, left)?;
     let left_type = typed_left.value.ann;
     let typed_right = typecheck_expr::check(ctx, right, left_type)?;
-    Ok(TypedExpr::new(
+    Ok(TypedExpr::from(
         ctx,
         offset,
         ExprKind::Binary(typed_left, op, typed_right),

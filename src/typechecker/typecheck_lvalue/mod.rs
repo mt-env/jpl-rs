@@ -12,9 +12,9 @@ pub(super) fn typecheck_lvalue<'src, 'new>(
 ) -> &'new TypedLValue<'src> {
     let loc = lvalue.offset;
     match &lvalue.value {
-        LValue::Var(name) => TypedLValue::make_typed(ctx, loc, LValue::Var(name)),
+        LValue::Var(name) => TypedLValue::new_ref(ctx, loc, LValue::Var(name)),
         LValue::Array(arr, dimensions) => {
-            TypedLValue::make_typed(ctx, loc, LValue::Array(arr, dimensions.clone()))
+            TypedLValue::new_ref(ctx, loc, LValue::Array(arr, dimensions.clone()))
         }
     }
 }
