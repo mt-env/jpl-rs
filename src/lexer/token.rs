@@ -86,13 +86,3 @@ pub enum LexErrorKind {
 }
 
 pub type LexError = Spanned<LexErrorKind>;
-
-impl LexError {
-    #[must_use]
-    pub const fn new(offset: usize, kind: LexErrorKind) -> Self {
-        Self {
-            offset,
-            value: kind,
-        }
-    }
-}
