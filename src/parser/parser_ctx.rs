@@ -1,6 +1,7 @@
 use bumpalo::Bump;
 
 use crate::{
+    Allocator,
     lexer::token::{Token, TokenKind},
     parser::ast::{BinOp, ParseError, ParseErrorKind, UnOp},
 };
@@ -104,8 +105,10 @@ impl<'src, 'ast> ParserCtx<'src, 'ast> {
             },
         ))
     }
+}
 
-    pub(super) fn alloc<A>(&self, value: A) -> &'ast A {
+impl<'ast> Allocator<'ast> for ParserCtx<'_, 'ast> {
+    fn alloc<T>(&self, value: T) -> &'ast T {
         self.alloc.alloc(value)
     }
 }

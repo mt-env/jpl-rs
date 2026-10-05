@@ -1,6 +1,7 @@
 use std::hint::unreachable_unchecked;
 
 use crate::{
+    Allocator,
     lexer::token::{Token, TokenKind},
     parser::{
         ParserCtx,
@@ -26,8 +27,8 @@ pub(super) fn parse_primary<'src, 'ast>(
         TokenKind::Sum,
     ])?;
     let mut expr = match kind {
-        TokenKind::True => ParsedExpr::new(ctx, offset, ExprKind::Bool(true)),
-        TokenKind::False => ParsedExpr::new(ctx, offset, ExprKind::Bool(false)),
+        TokenKind::True => ParsedExpr::from(ctx, offset, ExprKind::Bool(true)),
+        TokenKind::False => ParsedExpr::from(ctx, offset, ExprKind::Bool(false)),
         TokenKind::FloatVal => parse_float(ctx, str, offset)?,
         TokenKind::IntVal => parse_int(ctx, str, offset)?,
         TokenKind::Variable => {
@@ -39,10 +40,10 @@ pub(super) fn parse_primary<'src, 'ast>(
             else if ctx.peek_is(TokenKind::LParen) {
                 parse_call(ctx, offset, str)?
             } else {
-                ParsedExpr::new(ctx, offset, ExprKind::Var(str))
+                ParsedExpr::from(ctx, offset, ExprKind::Var(str))
             }
         }
-        TokenKind::Void => ParsedExpr::new(ctx, offset, ExprKind::Void),
+        TokenKind::Void => ParsedExpr::from(ctx, offset, ExprKind::Void),
         TokenKind::LSquare => parse_array_literal(ctx, offset)?,
         TokenKind::LParen => {
             let expr = parse_expr(ctx)?;
@@ -82,7 +83,7 @@ fn parse_int<'src, 'ast>(
             ParseErrorKind::InvalidIntLiteral(str),
         ));
     };
-    Ok(ParsedExpr::new(ctx, offset, ExprKind::Int(parsed_int)))
+    Ok(ParsedExpr::from(ctx, offset, ExprKind::Int(parsed_int)))
 }
 
 fn parse_float<'src, 'ast>(
@@ -102,7 +103,7 @@ fn parse_float<'src, 'ast>(
             ParseErrorKind::InvalidFloatLiteral(str),
         ));
     }
-    Ok(ParsedExpr::new(ctx, offset, ExprKind::Float(parsed_float)))
+    Ok(ParsedExpr::from(ctx, offset, ExprKind::Float(parsed_float)))
 }
 
 fn parse_array_literal<'src, 'ast>(
@@ -123,7 +124,7 @@ fn parse_array_literal<'src, 'ast>(
         }
     }
     ctx.expect(TokenKind::RSquare)?;
-    Ok(ParsedExpr::new(
+    Ok(ParsedExpr::from(
         ctx,
         offset,
         ExprKind::ArrayLiteral(elements),
@@ -137,7 +138,7 @@ fn parse_dot<'src, 'ast>(
     ctx.expect(TokenKind::Dot)?;
     let Token { str, .. } = ctx.expect(TokenKind::Variable)?;
     let dot_expr = ExprKind::Dot(inner, str);
-    Ok(ParsedExpr::new(ctx, inner.offset, dot_expr))
+    Ok(ParsedExpr::from(ctx, inner.offset, dot_expr))
 }
 
 fn parse_array_index<'src, 'ast>(
@@ -158,7 +159,7 @@ fn parse_array_index<'src, 'ast>(
     }
     ctx.expect(TokenKind::RSquare)?;
     let array_index_expr = ExprKind::ArrayIndex(inner, ctx.alloc(indices));
-    Ok(ParsedExpr::new(ctx, inner.offset, array_index_expr))
+    Ok(ParsedExpr::from(ctx, inner.offset, array_index_expr))
 }
 
 fn parse_struct_literal<'src, 'ast>(
@@ -180,7 +181,7 @@ fn parse_struct_literal<'src, 'ast>(
     }
     ctx.expect(TokenKind::RCurly)?;
     let struct_literal_expr = ExprKind::StructLiteral(struct_name, fields);
-    Ok(ParsedExpr::new(ctx, offset, struct_literal_expr))
+    Ok(ParsedExpr::from(ctx, offset, struct_literal_expr))
 }
 
 fn parse_call<'src, 'ast>(
@@ -202,7 +203,7 @@ fn parse_call<'src, 'ast>(
     }
     ctx.expect(TokenKind::RParen)?;
     let call_expr = ExprKind::Call(func_name, args);
-    Ok(ParsedExpr::new(ctx, offset, call_expr))
+    Ok(ParsedExpr::from(ctx, offset, call_expr))
 }
 
 fn parse_if<'src, 'ast>(
@@ -215,7 +216,7 @@ fn parse_if<'src, 'ast>(
     ctx.expect(TokenKind::Else)?;
     let else_expr = parse_expr(ctx)?;
     let if_expr = ExprKind::If(condition_expr, then_expr, else_expr);
-    Ok(ParsedExpr::new(ctx, offset, if_expr))
+    Ok(ParsedExpr::from(ctx, offset, if_expr))
 }
 
 fn parse_loop_expr<'src, 'ast>(
@@ -233,7 +234,7 @@ fn parse_loop_expr<'src, 'ast>(
             let Token { str: var_name, .. } = ctx.expect(TokenKind::Variable)?;
             ctx.expect(TokenKind::Colon)?;
             let expr = parse_expr(ctx)?;
-            bindings.push(ParsedLoopIterVar::new(
+            bindings.push(ParsedLoopIterVar::new_ref(
                 ctx,
                 offset,
                 LoopIterVar {
@@ -249,5 +250,5 @@ fn parse_loop_expr<'src, 'ast>(
     }
     ctx.expect(TokenKind::RSquare)?;
     let body = parse_expr(ctx)?;
-    Ok(ParsedExpr::new(ctx, offset, constructor(bindings, body)))
+    Ok(ParsedExpr::from(ctx, offset, constructor(bindings, body)))
 }

@@ -24,7 +24,7 @@ pub(super) fn parse_stmt<'src, 'ast>(
         TokenKind::Return => parse_return(ctx)?,
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
     };
-    Ok(ParsedStmt::new(ctx, offset, stmt_kind))
+    Ok(ParsedStmt::new_ref(ctx, offset, stmt_kind))
 }
 
 fn parse_let<'src, 'ast>(

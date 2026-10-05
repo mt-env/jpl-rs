@@ -54,7 +54,7 @@ fn parse_expr_precedence<'src, 'ast>(
     let mut left = if let Some(operator) = ctx.try_peek_unop() {
         let Token { offset, .. } = ctx.expect(TokenKind::Op)?;
         let operand = parse_expr_precedence(ctx, Prec::Unary)?;
-        ParsedExpr::new(ctx, offset, ExprKind::Unary(operator, operand))
+        ParsedExpr::from(ctx, offset, ExprKind::Unary(operator, operand))
     } else {
         parse_primary::parse_primary(ctx)?
     };
@@ -68,7 +68,7 @@ fn parse_expr_precedence<'src, 'ast>(
         ctx.expect(TokenKind::Op)?;
 
         let right = parse_expr_precedence(ctx, prec.next())?;
-        left = ParsedExpr::new(ctx, left.offset, ExprKind::Binary(left, binop, right));
+        left = ParsedExpr::from(ctx, left.offset, ExprKind::Binary(left, binop, right));
     }
 
     Ok(left)

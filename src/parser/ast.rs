@@ -1,4 +1,4 @@
-use crate::{Spanned, lexer::token::TokenKind, parser::ParserCtx};
+use crate::{Allocator, Spanned, lexer::token::TokenKind, parser::ParserCtx};
 
 pub type ParsedProgram<'src, 'ast> = Vec<&'ast ParsedCmd<'src, 'ast>>;
 pub type ParsedCmd<'src, 'ast> = Spanned<Cmd<'src, 'ast, ()>>;
@@ -9,6 +9,19 @@ pub type ParsedStmt<'src, 'ast> = Spanned<Stmt<'src, 'ast, ()>>;
 pub type ParsedBinding<'src, 'ast> = Spanned<Binding<'src, 'ast>>;
 pub type ParsedStructField<'src, 'ast> = Spanned<StructField<'src, 'ast>>;
 pub type ParsedLoopIterVar<'src, 'ast> = Spanned<LoopIterVar<'src, 'ast, ()>>;
+
+impl<'src, 'ast> ParsedExpr<'src, 'ast> {
+    pub(super) fn from(
+        ctx: &ParserCtx<'src, 'ast>,
+        offset: usize,
+        kind: ExprKind<'src, 'ast, ()>,
+    ) -> &'ast Self {
+        ctx.alloc(ParsedExpr {
+            offset,
+            value: Expr { ann: (), kind },
+        })
+    }
+}
 
 pub enum Cmd<'src, 'ast, A> {
     Read(&'src str, &'ast Spanned<LValue<'src>>),
@@ -31,16 +44,6 @@ pub enum Cmd<'src, 'ast, A> {
         name: &'src str,
         fields: Vec<&'ast Spanned<StructField<'src, 'ast>>>,
     },
-}
-
-impl<'src, 'ast> ParsedCmd<'src, 'ast> {
-    pub(super) fn new(
-        ctx: &ParserCtx<'src, 'ast>,
-        offset: usize,
-        cmd: Cmd<'src, 'ast, ()>,
-    ) -> &'ast Self {
-        ctx.alloc(Spanned { offset, value: cmd })
-    }
 }
 
 pub struct Expr<'src, 'ast, A> {
@@ -106,22 +109,6 @@ pub enum BinOp {
     Gte,
 }
 
-impl<'src, 'ast> ParsedExpr<'src, 'ast> {
-    pub(super) fn new(
-        ctx: &ParserCtx<'src, 'ast>,
-        offset: usize,
-        expr: ExprKind<'src, 'ast, ()>,
-    ) -> &'ast Self {
-        ctx.alloc(Spanned {
-            offset,
-            value: Expr {
-                ann: (),
-                kind: expr,
-            },
-        })
-    }
-}
-
 #[derive(Clone)]
 pub enum LValue<'src> {
     Var(&'src str),
@@ -174,19 +161,6 @@ pub enum Stmt<'src, 'ast, A> {
     Return(&'ast Spanned<Expr<'src, 'ast, A>>),
 }
 
-impl<'src, 'ast> ParsedStmt<'src, 'ast> {
-    pub(super) fn new(
-        ctx: &ParserCtx<'src, 'ast>,
-        offset: usize,
-        stmt: Stmt<'src, 'ast, ()>,
-    ) -> &'ast Self {
-        ctx.alloc(Spanned {
-            offset,
-            value: stmt,
-        })
-    }
-}
-
 pub struct Binding<'src, 'ast> {
     pub lvalue: &'ast Spanned<LValue<'src>>,
     pub ty: &'ast Spanned<Type<'src, 'ast>>,
@@ -228,19 +202,6 @@ pub struct LoopIterVar<'src, 'ast, A> {
     pub expr: &'ast Spanned<Expr<'src, 'ast, A>>,
 }
 
-impl<'src, 'ast> ParsedLoopIterVar<'src, 'ast> {
-    pub(super) fn new(
-        ctx: &ParserCtx<'src, 'ast>,
-        offset: usize,
-        loop_iter_var: LoopIterVar<'src, 'ast, ()>,
-    ) -> &'ast Self {
-        ctx.alloc(Spanned {
-            offset,
-            value: loop_iter_var,
-        })
-    }
-}
-
 pub enum ParseErrorKind<'src> {
     InvalidIntLiteral(&'src str),
     InvalidFloatLiteral(&'src str),
@@ -252,13 +213,3 @@ pub enum ParseErrorKind<'src> {
 }
 
 pub type ParseError<'src> = Spanned<ParseErrorKind<'src>>;
-
-impl<'src> ParseError<'src> {
-    #[must_use]
-    pub const fn new(offset: usize, kind: ParseErrorKind<'src>) -> Self {
-        Spanned {
-            offset,
-            value: kind,
-        }
-    }
-}

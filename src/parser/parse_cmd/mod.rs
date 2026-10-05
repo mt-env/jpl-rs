@@ -40,7 +40,7 @@ pub(super) fn parse_cmd<'src, 'ast>(
         TokenKind::Struct => parse_struct(ctx),
         _ => unsafe { unreachable_unchecked() }, // safe because of expect_many
     };
-    Ok(ParsedCmd::new(ctx, offset, cmd_kind?))
+    Ok(ParsedCmd::new_ref(ctx, offset, cmd_kind?))
 }
 
 fn parse_read<'src, 'ast>(
