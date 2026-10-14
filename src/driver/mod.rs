@@ -1,11 +1,10 @@
-use std::process::ExitCode;
+use std::{fs::File, io::Write, process::ExitCode};
 
 use bumpalo::Bump;
 
-use crate::{error, lexer, parser, typechecker};
+use crate::{codegen, error, lexer, parser, typechecker};
 
 mod print;
-
 #[must_use]
 pub fn run() -> ExitCode {
     let Config { filename, mode } = match parse_args() {
@@ -91,7 +90,16 @@ pub fn run() -> ExitCode {
         return ExitCode::from(0);
     }
 
-    todo!()
+    let bytes = codegen::gen_obj_file(&typed_program);
+    let Ok(mut file) = File::create("program.o") else {
+        println!("Compilation failed: could not create output file 'program.o'");
+        return ExitCode::from(1);
+    };
+    if file.write_all(&bytes).is_err() {
+        println!("Compilation failed: could not write to output file 'program.o'");
+        return ExitCode::from(1);
+    }
+    ExitCode::from(0)
 }
 
 fn parse_args() -> Result<Config, CliError> {
