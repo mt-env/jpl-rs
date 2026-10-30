@@ -215,6 +215,7 @@ impl<'src> Lexer<'src> {
             if !valid_char(c) {
                 self.errors
                     .push(LexError::new(end, LexErrorKind::IllegalByte(c)));
+                return;
             }
             if c == b'"' {
                 end += 1;
