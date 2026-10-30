@@ -33,15 +33,17 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
             local_scopes: Vec::new(),
         };
 
-        current.add_struct_info(
-            "rgba",
-            vec![
+        let rgba_info = NameInfo::new(
+            &current,
+            NameInfo::Struct(vec![
                 ("r", current.alloc.alloc(TypeValue::Float)),
                 ("g", current.alloc.alloc(TypeValue::Float)),
                 ("b", current.alloc.alloc(TypeValue::Float)),
                 ("a", current.alloc.alloc(TypeValue::Float)),
-            ],
+            ]),
         );
+
+        current.global_env.insert("rgba", rgba_info);
 
         current
             .global_env
