@@ -17,7 +17,7 @@ pub fn print_type_error(
     let mut writer = BufWriter::new(handle);
     let (line, column) = super::get_line_and_column(program, offset);
     super::show_line_with_error(&mut writer, program, offset)?;
-    print!("Type error at line {line}, column {column}: ");
+    println!("Type error at line {line}, column {column}:");
     match error {
         TypeErrorKind::ExpectType { expected, found } => {
             writeln!(writer, "Expected type '{expected}', found type '{found}'")
