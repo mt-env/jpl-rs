@@ -78,7 +78,7 @@ fn typecheck_struct<'src, 'old, 'new>(
             },
         ));
     }
-    ctx.add_struct_info(name, resolved_fields)?;
+    ctx.add_struct_info(offset, name, resolved_fields)?;
     Ok(TypedCmd::new(
         ctx,
         offset,
@@ -193,7 +193,7 @@ fn typecheck_fn<'src, 'old, 'new>(
     let ret_tyval = typecheck_type::typevalue_of_type(ctx, return_type)?;
 
     // add fn info to global env - has to be done before checking body for recursion
-    ctx.add_fn_info(name, param_types, ret_tyval)?;
+    ctx.add_fn_info(name, offset, param_types, ret_tyval)?;
 
     // check each statement in the body
     let mut typed_body = Vec::new();

@@ -114,13 +114,14 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
 
     pub(super) fn add_struct_info(
         &mut self,
+        offset: usize,
         name: &'src str,
         fields: Vec<(&'src str, &'ast TypeValue<'src, 'ast>)>,
     ) -> Result<(), TypeError<'src, 'ast>> {
         let struct_info = NameInfo::new(self, NameInfo::Struct(fields));
         if self.global_env.insert(name, struct_info).is_some() {
             return Err(TypeError {
-                offset: 0,
+                offset,
                 value: TypeErrorKind::DuplicateIdentifier(name),
             });
         }
@@ -130,13 +131,14 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
     pub(super) fn add_fn_info(
         &mut self,
         name: &'src str,
+        offset: usize,
         params: Vec<&'ast TypeValue<'src, 'ast>>,
         ret_ty: &'ast TypeValue<'src, 'ast>,
     ) -> Result<(), TypeError<'src, 'ast>> {
         let fn_info = NameInfo::new(self, NameInfo::Fn { params, ret_ty });
         if self.global_env.insert(name, fn_info).is_some() {
             return Err(TypeError {
-                offset: 0,
+                offset,
                 value: TypeErrorKind::DuplicateIdentifier(name),
             });
         }
