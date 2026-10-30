@@ -114,9 +114,15 @@ impl<'src, 'ast> TypecheckCtx<'src, 'ast> {
         &mut self,
         name: &'src str,
         fields: Vec<(&'src str, &'ast TypeValue<'src, 'ast>)>,
-    ) {
-        self.global_env
-            .insert(name, NameInfo::new(self, NameInfo::Struct(fields)));
+    ) -> Result<(), TypeError<'src, 'ast>> {
+        let struct_info = NameInfo::new(self, NameInfo::Struct(fields));
+        if self.global_env.insert(name, struct_info).is_some() {
+            return Err(TypeError {
+                offset: 0,
+                value: TypeErrorKind::DuplicateIdentifier(name),
+            });
+        }
+        Ok(())
     }
 
     pub(super) fn add_fn_info(

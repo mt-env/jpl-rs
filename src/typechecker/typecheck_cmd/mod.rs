@@ -78,7 +78,7 @@ fn typecheck_struct<'src, 'old, 'new>(
             },
         ));
     }
-    ctx.add_struct_info(name, resolved_fields);
+    ctx.add_struct_info(name, resolved_fields)?;
     Ok(TypedCmd::new(
         ctx,
         offset,
