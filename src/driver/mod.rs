@@ -27,7 +27,7 @@ pub fn run() -> ExitCode {
     let tokens = match lexer::lex(&program) {
         Ok(tokens) => tokens,
         Err(lex_errors) => {
-            if error::lex::print_lex_errors(lex_errors, &program).is_err() {
+            if error::print_lex_errors(&lex_errors, &program).is_err() {
                 println!("Compilation failed: could not print lex errors");
             }
             println!("Compilation failed: lexical analysis failed");
@@ -52,8 +52,8 @@ pub fn run() -> ExitCode {
     let ast_alloc = Bump::new(); // this is mutable, thanks RefCell
     let parsed_program = match parser::parse(&ast_alloc, tokens) {
         Ok(parsed_program) => parsed_program,
-        Err(parse_errors) => {
-            if error::parse::print_parse_error(parse_errors, &program).is_err() {
+        Err(parse_error) => {
+            if error::print_parse_error(&parse_error, &program).is_err() {
                 println!("Compilation failed: could not print parse errors");
             }
             println!("Compilation failed: parsing failed");
@@ -73,8 +73,8 @@ pub fn run() -> ExitCode {
     let typeck_alloc = Bump::with_capacity(ast_alloc.allocated_bytes());
     let typed_program = match typechecker::typecheck(&typeck_alloc, parsed_program) {
         Ok(typed_program) => typed_program,
-        Err(type_errors) => {
-            if error::typecheck::print_type_error(type_errors, &program).is_err() {
+        Err(type_error) => {
+            if error::print_type_error(&type_error, &program).is_err() {
                 println!("Compilation failed: could not print type errors");
             }
             println!("Compilation failed: typechecking failed");
