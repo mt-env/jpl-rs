@@ -1,9 +1,7 @@
 use bumpalo::Bump;
 
 use crate::{
-    error::{ParseError, ParseErrorKind},
-    lexer::token::{Token, TokenKind},
-    parser::ast::{BinOp, UnOp},
+    Allocator, error::{ParseError, ParseErrorKind}, lexer::token::{Token, TokenKind}, parser::ast::{BinOp, UnOp},
 };
 
 pub(super) struct ParserCtx<'src, 'ast> {
@@ -105,8 +103,10 @@ impl<'src, 'ast> ParserCtx<'src, 'ast> {
             },
         ))
     }
+}
 
-    pub(super) fn alloc<A>(&self, value: A) -> &'ast A {
+impl<'ast> Allocator<'ast> for ParserCtx<'_, 'ast> {
+    fn alloc<T>(&self, value: T) -> &'ast T {
         self.alloc.alloc(value)
     }
 }

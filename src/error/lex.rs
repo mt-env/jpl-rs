@@ -11,16 +11,6 @@ pub enum LexErrorKind {
 
 pub type LexError = Spanned<LexErrorKind>;
 
-impl LexError {
-    #[must_use]
-    pub const fn new(offset: usize, kind: LexErrorKind) -> Self {
-        Self {
-            offset,
-            value: kind,
-        }
-    }
-}
-
 impl CompilerError for LexError {
     fn print_diagnostic(&self, writer: &mut impl Write, line: usize, col: usize) -> io::Result<()> {
         write!(writer, "Lex error at line {line}, column {col}: ")?;
