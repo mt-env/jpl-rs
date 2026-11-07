@@ -1,5 +1,3 @@
-use crate::Spanned;
-
 #[derive(Clone, Copy)]
 pub struct Token<'src> {
     pub kind: TokenKind,
@@ -74,25 +72,6 @@ impl<'src> Token<'src> {
             kind,
             offset,
             str: unsafe { std::str::from_utf8_unchecked(bytes) },
-        }
-    }
-}
-
-pub enum LexErrorKind {
-    UnterminatedString,
-    UnterminatedComment,
-    IllegalCharacter(u8),
-    IllegalByte(u8),
-}
-
-pub type LexError = Spanned<LexErrorKind>;
-
-impl LexError {
-    #[must_use]
-    pub const fn new(offset: usize, kind: LexErrorKind) -> Self {
-        Self {
-            offset,
-            value: kind,
         }
     }
 }

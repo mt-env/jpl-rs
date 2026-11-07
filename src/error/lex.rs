@@ -1,9 +1,25 @@
 use std::io::{self, Write};
 
-use crate::{
-    error::CompilerError,
-    lexer::token::{LexError, LexErrorKind},
-};
+use crate::{Spanned, error::CompilerError};
+
+pub enum LexErrorKind {
+    UnterminatedString,
+    UnterminatedComment,
+    IllegalCharacter(u8),
+    IllegalByte(u8),
+}
+
+pub type LexError = Spanned<LexErrorKind>;
+
+impl LexError {
+    #[must_use]
+    pub const fn new(offset: usize, kind: LexErrorKind) -> Self {
+        Self {
+            offset,
+            value: kind,
+        }
+    }
+}
 
 impl CompilerError for LexError {
     fn print_diagnostic(&self, writer: &mut impl Write, line: usize, col: usize) -> io::Result<()> {

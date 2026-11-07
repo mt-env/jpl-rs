@@ -1,4 +1,7 @@
-use crate::lexer::token::{LexError, LexErrorKind, Token, TokenKind};
+use crate::{
+    error::{LexError, LexErrorKind},
+    lexer::token::{Token, TokenKind},
+};
 
 pub mod token;
 
