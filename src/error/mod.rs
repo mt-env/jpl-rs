@@ -1,8 +1,43 @@
-use std::io::Write;
+use std::io::{self, BufWriter, Write};
+
+use crate::{lexer::token::LexError, parser::ast::ParseError, typechecker::ast::TypeError};
 
 pub mod lex;
 pub mod parse;
 pub mod typecheck;
+
+pub trait CompilerError {
+    fn print_diagnostic(&self, writer: &mut impl Write, line: usize, col: usize) -> io::Result<()>;
+    fn get_offset(&self) -> usize;
+}
+
+pub fn print_lex_errors(errors: &[LexError], program: &[u8]) -> io::Result<()> {
+    print_errors(&mut BufWriter::new(io::stdout().lock()), errors, program)
+}
+
+pub fn print_parse_error(error: &ParseError, program: &[u8]) -> io::Result<()> {
+    print_error(&mut BufWriter::new(io::stdout().lock()), error, program)
+}
+
+pub fn print_type_error(error: &TypeError, program: &[u8]) -> io::Result<()> {
+    print_error(&mut BufWriter::new(io::stdout().lock()), error, program)
+}
+
+fn print_errors(writer: &mut impl Write, errors: &[impl CompilerError], program: &[u8]) -> io::Result<()> {
+    for error in errors {
+        print_error(writer, error, program)?;
+    }
+    writer.flush()
+}
+
+fn print_error(writer: &mut impl Write, error: &impl CompilerError, program: &[u8]) -> io::Result<()> {
+    let offset = error.get_offset();
+    let (line, column) = get_line_and_column(program, offset);
+    show_line_with_error(writer, program, offset, line, column)?;
+    error.print_diagnostic(writer, line, column)?;
+    writeln!(writer)?;
+    writer.flush()
+}
 
 fn get_line_and_column(program: &[u8], pos: usize) -> (usize, usize) {
     let mut line = 1;
@@ -25,8 +60,9 @@ fn show_line_with_error(
     writer: &mut impl Write,
     program: &[u8],
     pos: usize,
+    line: usize,
+    column: usize,
 ) -> std::io::Result<()> {
-    let (line, column) = get_line_and_column(program, pos);
     let line_start = program[..pos]
         .iter()
         .rposition(|&c| c == b'\n')
