@@ -209,16 +209,18 @@ impl<'src> Lexer<'src> {
     fn lex_string_literal(&mut self) {
         let start = self.curr_pos;
         let mut end = start + 1;
+        let mut valid_string = true;
         loop {
             let Some(&c) = self.program.get(end) else {
                 self.errors
                     .push(LexError::new(start, LexErrorKind::UnterminatedString));
+                valid_string = false;
                 break;
             };
             if !valid_char(c) {
                 self.errors
                     .push(LexError::new(end, LexErrorKind::IllegalByte(c)));
-                return;
+                valid_string = false;
             }
             if c == b'"' {
                 end += 1;
@@ -227,13 +229,16 @@ impl<'src> Lexer<'src> {
             if c == b'\n' {
                 self.errors
                     .push(LexError::new(start, LexErrorKind::UnterminatedString));
+                valid_string = false;
                 break;
             }
             end += 1;
         }
         let token_str = &self.program[start..end];
-        self.tokens
-            .push(Token::from_u8(TokenKind::String, start, token_str));
+        if valid_string {
+            self.tokens
+                .push(Token::from_u8(TokenKind::String, start, token_str));
+        }
         self.curr_pos = end;
     }
 
