@@ -1,49 +1,40 @@
-use std::io::{self, BufWriter, Write};
+use std::io::{self, Write};
 
 use crate::{
-    Spanned,
+    error::CompilerError,
     parser::ast::{ParseError, ParseErrorKind},
 };
 
-pub fn print_parse_error(
-    Spanned {
-        offset,
-        value: error,
-    }: ParseError,
-    program: &[u8],
-) -> io::Result<()> {
-    let stdout = io::stdout();
-    let handle = stdout.lock();
-    let mut writer = BufWriter::new(handle);
-    let (line, column) = super::get_line_and_column(program, offset);
-    super::show_line_with_error(&mut writer, program, offset)?;
-    match error {
-        ParseErrorKind::InvalidIntLiteral(src) => {
-            writeln!(
-                writer,
-                "Parse error at line {line}, column {column}: Invalid integer literal '{src}'",
-            )
+impl CompilerError for ParseError<'_> {
+    fn print_diagnostic(&self, writer: &mut impl Write, line: usize, col: usize) -> io::Result<()> {
+        write!(writer, "Parse error at line {line}, column {col}: ")?;
+        match &self.value {
+            ParseErrorKind::InvalidIntLiteral(int) => {
+                writeln!(writer, "Invalid integer literal '{int}'")?;
+            }
+            ParseErrorKind::InvalidFloatLiteral(float) => {
+                writeln!(writer, "Invalid float literal '{float}'")?;
+            }
+            ParseErrorKind::UnexpectedToken {
+                expected,
+                found,
+                value,
+            } => {
+                let expected_str = expected
+                    .iter()
+                    .map(|kind| format!("{kind}"))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                writeln!(
+                    writer,
+                    "Unexpected token '{value}' of kind '{found}', expected one of: {expected_str}"
+                )?;
+            }
         }
-        ParseErrorKind::InvalidFloatLiteral(src) => {
-            writeln!(
-                writer,
-                "Parse error at line {line}, column {column}: Invalid float literal '{src}'"
-            )
-        }
-        ParseErrorKind::UnexpectedToken {
-            expected,
-            found,
-            value,
-        } => {
-            let expected_str = expected
-                .iter()
-                .map(|kind| format!("{kind}"))
-                .collect::<Vec<_>>()
-                .join(", ");
-            writeln!(
-                writer,
-                "Parse error at line {line}, column {column}: Unexpected token '{value}' of kind '{found}', expected one of: {expected_str}",
-            )
-        }
+        Ok(())
+    }
+
+    fn get_offset(&self) -> usize {
+        self.offset
     }
 }
