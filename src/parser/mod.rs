@@ -1,11 +1,9 @@
 use bumpalo::Bump;
 
 use crate::{
+    error::ParseError,
     lexer::token::{Token, TokenKind},
-    parser::{
-        ast::{ParseError, ParsedProgram},
-        parser_ctx::ParserCtx,
-    },
+    parser::{ast::ParsedProgram, parser_ctx::ParserCtx},
 };
 
 pub mod ast;

@@ -1,9 +1,10 @@
 use std::hint::unreachable_unchecked;
 
 use crate::{
+    error::ParseError,
     lexer::token::{Token, TokenKind},
     parser::{
-        ast::{Cmd, ParseError, ParsedCmd, ParsedStructField, StructField},
+        ast::{Cmd, ParsedCmd, ParsedStructField, StructField},
         parse_binding, parse_expr, parse_lvalue, parse_stmt, parse_type,
         parser_ctx::ParserCtx,
     },

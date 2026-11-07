@@ -1,6 +1,6 @@
 use std::io::{self, BufWriter, Write};
 
-use crate::{parser::ast::ParseError, typechecker::ast::TypeError};
+use crate::typechecker::ast::TypeError;
 
 mod lex;
 mod parse;
@@ -8,6 +8,8 @@ mod typecheck;
 
 pub use lex::LexError;
 pub use lex::LexErrorKind;
+pub use parse::ParseError;
+pub use parse::ParseErrorKind;
 
 pub fn print_lex_errors(errors: &[LexError], program: &[u8]) -> io::Result<()> {
     print_errors(&mut BufWriter::new(io::stdout().lock()), errors, program)

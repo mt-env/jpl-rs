@@ -1,8 +1,9 @@
 use bumpalo::Bump;
 
 use crate::{
+    error::{ParseError, ParseErrorKind},
     lexer::token::{Token, TokenKind},
-    parser::ast::{BinOp, ParseError, ParseErrorKind, UnOp},
+    parser::ast::{BinOp, UnOp},
 };
 
 pub(super) struct ParserCtx<'src, 'ast> {

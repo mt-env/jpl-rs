@@ -1,8 +1,9 @@
 use crate::{
+    error::ParseError,
     lexer::token::{Token, TokenKind},
     parser::{
         ParserCtx,
-        ast::{LValue, ParseError, ParsedLValue},
+        ast::{LValue, ParsedLValue},
     },
 };
 

@@ -1,9 +1,28 @@
 use std::io::{self, Write};
 
-use crate::{
-    error::CompilerError,
-    parser::ast::{ParseError, ParseErrorKind},
-};
+use crate::{Spanned, error::CompilerError, lexer::token::TokenKind};
+
+pub enum ParseErrorKind<'src> {
+    InvalidIntLiteral(&'src str),
+    InvalidFloatLiteral(&'src str),
+    UnexpectedToken {
+        expected: Vec<TokenKind>,
+        found: TokenKind,
+        value: &'src str,
+    },
+}
+
+pub type ParseError<'src> = Spanned<ParseErrorKind<'src>>;
+
+impl<'src> ParseError<'src> {
+    #[must_use]
+    pub const fn new(offset: usize, kind: ParseErrorKind<'src>) -> Self {
+        Spanned {
+            offset,
+            value: kind,
+        }
+    }
+}
 
 impl CompilerError for ParseError<'_> {
     fn print_diagnostic(&self, writer: &mut impl Write, line: usize, col: usize) -> io::Result<()> {
