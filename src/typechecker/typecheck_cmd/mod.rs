@@ -1,10 +1,11 @@
 use crate::{
+    error::{TypeError, TypeErrorKind},
     parser::ast::{
         Cmd, ParsedBinding, ParsedCmd, ParsedExpr, ParsedLValue, ParsedStmt, ParsedStructField,
         ParsedType, Stmt, StructField, Type,
     },
     typechecker::{
-        ast::{TypeError, TypeErrorKind, TypeValue, TypedCmd, TypedStructField},
+        ast::{TypeValue, TypedCmd, TypedStructField},
         typecheck_binding,
         typecheck_ctx::TypecheckCtx,
         typecheck_expr, typecheck_lvalue, typecheck_stmt, typecheck_type,

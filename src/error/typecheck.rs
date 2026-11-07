@@ -1,9 +1,62 @@
 use std::io::{self, Write};
 
-use crate::{
-    error::CompilerError,
-    typechecker::ast::{TypeError, TypeErrorKind},
-};
+use crate::{Spanned, error::CompilerError, typechecker::ast::TypeValue};
+
+pub type TypeError<'src, 'ast> = Spanned<TypeErrorKind<'src, 'ast>>;
+
+pub enum TypeErrorKind<'src, 'ast> {
+    ExpectType {
+        expected: &'ast TypeValue<'src, 'ast>,
+        found: &'ast TypeValue<'src, 'ast>,
+    },
+    ExpectTypes {
+        expected: &'ast [&'ast TypeValue<'src, 'ast>],
+        found: &'ast TypeValue<'src, 'ast>,
+    },
+    EmptyArrayLiteral,
+    EmptyArrayLoopBindings,
+    EmptySumLoopBindings,
+    UnknownIdentifier(&'src str),
+    UnknownStruct(&'src str),
+    UnknownValue(&'src str),
+    UnknownFunction(&'src str),
+    DuplicateIdentifier(&'src str),
+    DuplicateStructField {
+        struct_name: &'src str,
+        field_name: &'src str,
+    },
+    StructFieldCountMismatch {
+        struct_name: &'src str,
+        expected: usize,
+        actual: usize,
+    },
+    FunctionArgCountMismatch {
+        function_name: &'src str,
+        expected: usize,
+        actual: usize,
+    },
+    DotOnNonStruct,
+    UnknownStructField {
+        struct_name: &'src str,
+        field_name: &'src str,
+    },
+    ArrayIndexOnNonArray,
+    ArrayIndexDimensionMismatch {
+        expected: usize,
+        actual: usize,
+    },
+    ArrayLValueOnNonArray {
+        rhs: &'ast TypeValue<'src, 'ast>,
+    },
+    ArrayLValueDimensionMismatch {
+        expected: usize,
+        actual: usize,
+    },
+    MissingReturn {
+        fn_name: &'src str,
+        return_type: &'ast TypeValue<'src, 'ast>,
+    },
+}
 
 impl CompilerError for TypeError<'_, '_> {
     fn print_diagnostic(&self, writer: &mut impl Write, line: usize, col: usize) -> io::Result<()> {

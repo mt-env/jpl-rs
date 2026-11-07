@@ -30,8 +30,6 @@ pub type TypedStructField<'src, 'ast> = Spanned<StructField<'src, 'ast>>;
 pub type TypedLoopIterVar<'src, 'ast> =
     Spanned<LoopIterVar<'src, 'ast, &'ast TypeValue<'src, 'ast>>>;
 
-pub type TypeError<'src, 'ast> = Spanned<TypeErrorKind<'src, 'ast>>;
-
 impl<'src, 'ast> TypedCmd<'src, 'ast> {
     pub(super) fn new(
         ctx: &TypecheckCtx<'src, 'ast>,

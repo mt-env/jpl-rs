@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use bumpalo::Bump;
 
-use crate::typechecker::ast::{TypeError, TypeErrorKind, TypeValue};
+use crate::{
+    error::{TypeError, TypeErrorKind},
+    typechecker::ast::TypeValue,
+};
 
 pub(super) enum NameInfo<'src, 'ast> {
     Value(&'ast TypeValue<'src, 'ast>),

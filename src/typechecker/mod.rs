@@ -1,11 +1,9 @@
 use bumpalo::Bump;
 
 use crate::{
+    error::TypeError,
     parser::ast::ParsedCmd,
-    typechecker::{
-        ast::{TypeError, TypedProgram},
-        typecheck_ctx::TypecheckCtx,
-    },
+    typechecker::{ast::TypedProgram, typecheck_ctx::TypecheckCtx},
 };
 
 pub mod ast;

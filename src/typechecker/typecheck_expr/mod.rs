@@ -1,7 +1,8 @@
 use crate::{
+    error::TypeError,
     parser::ast::ParsedExpr,
     typechecker::{
-        ast::{TypeError, TypeValue, TypedExpr},
+        ast::{TypeValue, TypedExpr},
         typecheck_ctx::TypecheckCtx,
     },
 };

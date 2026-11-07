@@ -1,9 +1,10 @@
 use crate::{
     Spanned,
+    error::{TypeError, TypeErrorKind},
     parser::ast::{ParsedType, Type},
     typechecker::{
         TypecheckCtx,
-        ast::{TypeError, TypeErrorKind, TypeValue, TypedType},
+        ast::{TypeValue, TypedType},
         typecheck_ctx::NameInfo,
     },
 };

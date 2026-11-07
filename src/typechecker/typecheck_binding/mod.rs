@@ -1,10 +1,7 @@
 use crate::{
+    error::TypeError,
     parser::ast::{Binding, ParsedBinding},
-    typechecker::{
-        TypecheckCtx,
-        ast::{TypeError, TypedBinding},
-        typecheck_lvalue, typecheck_type,
-    },
+    typechecker::{TypecheckCtx, ast::TypedBinding, typecheck_lvalue, typecheck_type},
 };
 
 pub(super) fn typecheck_binding<'src, 'old, 'new>(
