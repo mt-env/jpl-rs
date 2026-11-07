@@ -28,7 +28,6 @@ pub(super) fn bind_lvalue<'src, 'new>(
     match &lvalue.value {
         LValue::Var(name) => {
             ctx.bind(lvalue.offset, name, ty)?;
-            Ok(())
         }
         LValue::Array(name, dimensions) => {
             // we can only bind an array lvalue to an array type
@@ -55,7 +54,7 @@ pub(super) fn bind_lvalue<'src, 'new>(
             for dim in dimensions {
                 ctx.bind(lvalue.offset, dim, &TypeValue::Int)?;
             }
-            Ok(())
         }
     }
+    Ok(())
 }
